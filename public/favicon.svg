@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5D4037;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8D6E63;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#grad)"/>
+  
+  <!-- Letter E -->
+  <text x="50" y="70" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#FDFBF7" text-anchor="middle">E</text>
+  
+  <!-- Decorative element (fork and knife) -->
+  <g transform="translate(50, 20)">
+    <line x1="-8" y1="0" x2="-8" y2="12" stroke="#D7CCC8" stroke-width="2" stroke-linecap="round"/>
+    <line x1="-11" y1="0" x2="-11" y2="8" stroke="#D7CCC8" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="-5" y1="0" x2="-5" y2="8" stroke="#D7CCC8" stroke-width="1.5" stroke-linecap="round"/>
+    
+    <line x1="8" y1="0" x2="8" y2="12" stroke="#D7CCC8" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 5,0 L 5,4 L 11,4 L 11,0" fill="none" stroke="#D7CCC8" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>
