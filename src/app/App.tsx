@@ -116,7 +116,10 @@ export default function App() {
             navigate('ADMIN_DASHBOARD');
           }} />;
         }
-        return <AdminDashboard />;
+        return <AdminDashboard onLogout={() => {
+          setIsAdminAuthenticated(false);
+          navigate('HOME');
+        }} />;
 
       // Confirmation
       case 'CONFIRMATION_RESERVATION':
