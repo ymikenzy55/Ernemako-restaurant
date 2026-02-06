@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Image as ImageIcon, UtensilsCrossed, Calendar, 
-  FileText, LogOut, MessageSquare, Plus, Trash2, Edit, X, Check
+  FileText, LogOut, MessageSquare, Plus, Trash2, Edit, X, Check, Settings as SettingsIcon, Bell, Send
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { 
@@ -10,7 +10,7 @@ import {
 } from '../../lib/adminApi';
 import { toast } from 'sonner';
 
-type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'reservations' | 'messages' | 'about' | 'hero';
+type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'reservations' | 'messages' | 'about' | 'hero' | 'settings';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -18,15 +18,39 @@ interface AdminDashboardProps {
 
 export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingReservations, setPendingReservations] = useState(0);
+
+  // Poll for new messages and reservations every 30 seconds
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const [messages, reservations] = await Promise.all([
+          contactApi.getAll(),
+          reservationApi.getAll()
+        ]);
+        setUnreadCount(messages.filter(m => m.status === 'unread').length);
+        setPendingReservations(reservations.filter(r => r.status === 'pending').length);
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+      }
+    };
+
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const menuItems = [
     { id: 'dashboard' as AdminSection, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'messages' as AdminSection, label: 'Messages', icon: MessageSquare },
-    { id: 'reservations' as AdminSection, label: 'Reservations', icon: Calendar },
+    { id: 'messages' as AdminSection, label: 'Messages', icon: MessageSquare, badge: unreadCount },
+    { id: 'reservations' as AdminSection, label: 'Reservations', icon: Calendar, badge: pendingReservations },
     { id: 'menu' as AdminSection, label: 'Menu', icon: UtensilsCrossed },
     { id: 'gallery' as AdminSection, label: 'Gallery', icon: ImageIcon },
     { id: 'about' as AdminSection, label: 'About Page', icon: FileText },
     { id: 'hero' as AdminSection, label: 'Hero Banner', icon: ImageIcon },
+    { id: 'settings' as AdminSection, label: 'Settings', icon: SettingsIcon },
   ];
 
   return (
@@ -43,12 +67,17 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg relative ${
                   activeSection === item.id ? 'bg-[#8D6E63]' : 'hover:bg-white/10'
                 }`}
               >
                 <Icon size={20} />
                 <span className="text-sm md:text-base">{item.label}</span>
+                {item.badge && item.badge > 0 && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -74,6 +103,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
           {activeSection === 'gallery' && <GallerySection />}
           {activeSection === 'about' && <AboutSection />}
           {activeSection === 'hero' && <HeroBannerSection />}
+          {activeSection === 'settings' && <SettingsSection />}
         </main>
       </div>
     </div>
@@ -104,6 +134,9 @@ const DashboardSection = () => {
 const MessagesSection = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [sending, setSending] = useState(false);
 
   const loadMessages = () => contactApi.getAll().then(setMessages).catch(e => toast.error('Failed to load messages'));
   useEffect(() => { loadMessages(); }, []);
@@ -127,6 +160,34 @@ const MessagesSection = () => {
     } catch (error) {
       toast.error('Failed to delete');
     }
+  };
+
+  const handleSendReply = async (msg: ContactMessage) => {
+    if (!replyMessage.trim()) {
+      toast.error('Please enter a reply message');
+      return;
+    }
+
+    setSending(true);
+    try {
+      // Create mailto link to open user's email client
+      const subject = encodeURIComponent(`Re: Your message to Ernemako Restaurant`);
+      const body = encodeURIComponent(replyMessage);
+      const mailtoLink = `mailto:${msg.email}?subject=${subject}&body=${body}`;
+      
+      // Open email client
+      window.location.href = mailtoLink;
+      
+      // Mark as replied
+      await contactApi.updateStatus(msg.id, 'replied');
+      toast.success('Email client opened. Message marked as replied.');
+      setReplyingTo(null);
+      setReplyMessage('');
+      loadMessages();
+    } catch (error) {
+      toast.error('Failed to send reply');
+    }
+    setSending(false);
   };
 
   const filteredMessages = filter === 'all' ? messages : messages.filter(m => m.status === filter);
@@ -153,11 +214,34 @@ const MessagesSection = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h4 className="font-bold text-lg">{msg.name}</h4>
-                    {msg.status === 'unread' && <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded-full">NEW</span>}
+                    {msg.status === 'unread' && <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded-full flex items-center gap-1"><Bell size={12} /> NEW</span>}
                   </div>
                   <p className="text-sm text-gray-600 mb-1">{msg.email} {msg.phone && `• ${msg.phone}`}</p>
                   <p className="mt-3 text-gray-800">{msg.message}</p>
                   <p className="text-xs text-gray-400 mt-2">{new Date(msg.created_at).toLocaleString()}</p>
+                  
+                  {/* Reply Form */}
+                  {replyingTo === msg.id && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                      <label className="block text-sm font-medium mb-2">Reply to {msg.name}</label>
+                      <textarea
+                        value={replyMessage}
+                        onChange={e => setReplyMessage(e.target.value)}
+                        className="w-full p-3 border rounded-lg mb-3"
+                        rows={4}
+                        placeholder="Type your reply here..."
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleSendReply(msg)} disabled={sending}>
+                          <Send size={16} /> {sending ? 'Sending...' : 'Send Reply'}
+                        </Button>
+                        <Button size="sm" onClick={() => { setReplyingTo(null); setReplyMessage(''); }} className="bg-gray-500">
+                          Cancel
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">This will open your email client to send the reply</p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 ml-4">
                   {msg.status === 'unread' && (
@@ -165,10 +249,13 @@ const MessagesSection = () => {
                       <Check size={16} /> Mark Read
                     </Button>
                   )}
-                  {msg.status === 'read' && (
-                    <Button size="sm" onClick={() => handleStatusUpdate(msg.id, 'replied')} className="bg-green-500">
-                      <Check size={16} /> Replied
+                  {msg.status !== 'replied' && (
+                    <Button size="sm" onClick={() => setReplyingTo(msg.id)} className="bg-green-500">
+                      <Send size={16} /> Reply
                     </Button>
+                  )}
+                  {msg.status === 'replied' && (
+                    <span className="text-xs text-green-600 font-medium">✓ Replied</span>
                   )}
                   <button onClick={() => handleDelete(msg.id)} className="p-2 hover:bg-red-100 text-red-600 rounded">
                     <Trash2 size={16} />
@@ -702,6 +789,158 @@ const HeroBannerSection = () => {
           </Button>
         </form>
       </div>
+    </div>
+  );
+};
+
+
+const SettingsSection = () => {
+  const [activeTab, setActiveTab] = useState<'password' | 'admins'>('password');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await adminApi.updatePassword(newPassword);
+      toast.success('Password updated successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update password');
+    }
+    setChangingPassword(false);
+  };
+
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newAdminPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setCreatingAdmin(true);
+    try {
+      await adminApi.createAdmin(newAdminEmail, newAdminPassword);
+      toast.success('Admin user created successfully');
+      setNewAdminEmail('');
+      setNewAdminPassword('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create admin');
+    }
+    setCreatingAdmin(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-2 border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('password')}
+          className={`px-6 py-3 font-medium ${activeTab === 'password' ? 'border-b-2 border-[#8D6E63] text-[#8D6E63]' : 'text-gray-600'}`}
+        >
+          Change Password
+        </button>
+        <button
+          onClick={() => setActiveTab('admins')}
+          className={`px-6 py-3 font-medium ${activeTab === 'admins' ? 'border-b-2 border-[#8D6E63] text-[#8D6E63]' : 'text-gray-600'}`}
+        >
+          Manage Admins
+        </button>
+      </div>
+
+      {activeTab === 'password' && (
+        <div className="bg-white p-6 rounded-xl max-w-md">
+          <h3 className="text-xl font-bold mb-6">Change Your Password</h3>
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div>
+              <label className="block font-medium mb-2">New Password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                className="w-full p-3 border rounded-lg"
+                placeholder="Enter new password"
+                required
+                minLength={6}
+              />
+            </div>
+            <div>
+              <label className="block font-medium mb-2">Confirm New Password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                className="w-full p-3 border rounded-lg"
+                placeholder="Confirm new password"
+                required
+                minLength={6}
+              />
+            </div>
+            <Button type="submit" disabled={changingPassword} fullWidth>
+              {changingPassword ? 'Updating...' : 'Update Password'}
+            </Button>
+          </form>
+        </div>
+      )}
+
+      {activeTab === 'admins' && (
+        <div className="bg-white p-6 rounded-xl max-w-md">
+          <h3 className="text-xl font-bold mb-6">Create New Admin</h3>
+          <form onSubmit={handleCreateAdmin} className="space-y-4">
+            <div>
+              <label className="block font-medium mb-2">Email Address</label>
+              <input
+                type="email"
+                value={newAdminEmail}
+                onChange={e => setNewAdminEmail(e.target.value)}
+                className="w-full p-3 border rounded-lg"
+                placeholder="admin@example.com"
+                required
+              />
+            </div>
+            <div>
+              <label className="block font-medium mb-2">Password</label>
+              <input
+                type="password"
+                value={newAdminPassword}
+                onChange={e => setNewAdminPassword(e.target.value)}
+                className="w-full p-3 border rounded-lg"
+                placeholder="Minimum 6 characters"
+                required
+                minLength={6}
+              />
+            </div>
+            <Button type="submit" disabled={creatingAdmin} fullWidth>
+              {creatingAdmin ? 'Creating...' : 'Create Admin'}
+            </Button>
+          </form>
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> The new admin will receive a confirmation email and can log in immediately with the provided credentials.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
