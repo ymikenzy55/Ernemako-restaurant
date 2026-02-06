@@ -287,7 +287,7 @@ const MenuSection = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active' });
+  const [formData, setFormData] = useState({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active', featured: false });
   const [uploading, setUploading] = useState(false);
 
   const loadItems = () => menuApi.getAll().then(setItems).catch(e => toast.error('Failed to load menu items'));
@@ -305,7 +305,7 @@ const MenuSection = () => {
       }
       setShowForm(false);
       setEditingItem(null);
-      setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active' });
+      setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active', featured: false });
       loadItems();
     } catch (error) {
       toast.error('Failed to save menu item');
@@ -340,15 +340,25 @@ const MenuSection = () => {
 
   const handleEdit = (item: MenuItem) => {
     setEditingItem(item);
-    setFormData({ name: item.name, description: item.description, price: item.price, category: item.category, image_url: item.image_url, status: item.status });
+    setFormData({ name: item.name, description: item.description, price: item.price, category: item.category, image_url: item.image_url, status: item.status, featured: item.featured });
     setShowForm(true);
+  };
+
+  const toggleFeatured = async (item: MenuItem) => {
+    try {
+      await menuApi.update(item.id, { featured: !item.featured });
+      toast.success(item.featured ? 'Removed from featured' : 'Added to featured');
+      loadItems();
+    } catch (error) {
+      toast.error('Failed to update');
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-bold">Menu Items ({items.length})</h3>
-        <Button onClick={() => { setShowForm(true); setEditingItem(null); setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active' }); }}>
+        <Button onClick={() => { setShowForm(true); setEditingItem(null); setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active', featured: false }); }}>
           <Plus size={20} /> Add Menu Item
         </Button>
       </div>
@@ -370,10 +380,18 @@ const MenuSection = () => {
               <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full p-3 border rounded-lg" disabled={uploading} />
               {formData.image_url && <img src={formData.image_url} alt="Preview" className="mt-2 h-32 object-cover rounded" />}
             </div>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={formData.status === 'active'} onChange={e => setFormData(prev => ({ ...prev, status: e.target.checked ? 'active' : 'inactive' }))} />
-              Available
-            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={formData.status === 'active'} onChange={e => setFormData(prev => ({ ...prev, status: e.target.checked ? 'active' : 'inactive' }))} />
+                Available
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={formData.featured} onChange={e => setFormData(prev => ({ ...prev, featured: e.target.checked }))} />
+                <span className="flex items-center gap-1">
+                  Featured <span className="text-yellow-500">⭐</span>
+                </span>
+              </label>
+            </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={uploading}>{editingItem ? 'Update' : 'Add'}</Button>
               <Button type="button" onClick={() => setShowForm(false)} className="bg-gray-500">Cancel</Button>
@@ -384,15 +402,21 @@ const MenuSection = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {items.map(item => (
-          <div key={item.id} className="bg-white p-4 rounded-xl border-2 border-gray-200 flex gap-4">
+          <div key={item.id} className={`bg-white p-4 rounded-xl border-2 ${item.featured ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200'} flex gap-4`}>
             {item.image_url && <img src={item.image_url} alt={item.name} className="w-24 h-24 object-cover rounded" />}
             <div className="flex-1">
-              <h4 className="font-bold">{item.name}</h4>
+              <div className="flex items-center gap-2">
+                <h4 className="font-bold">{item.name}</h4>
+                {item.featured && <span className="text-yellow-500">⭐</span>}
+              </div>
               <p className="text-sm text-gray-600">{item.description}</p>
               <p className="font-bold text-[#8D6E63]">GH₵{item.price}</p>
               <p className="text-xs text-gray-500">{item.category} • {item.status === 'active' ? 'Available' : 'Unavailable'}</p>
             </div>
             <div className="flex flex-col gap-2">
+              <button onClick={() => toggleFeatured(item)} className="p-2 hover:bg-yellow-100 rounded" title={item.featured ? 'Remove from featured' : 'Add to featured'}>
+                <span className={item.featured ? 'text-yellow-500' : 'text-gray-400'}>⭐</span>
+              </button>
               <button onClick={() => handleEdit(item)} className="p-2 hover:bg-gray-100 rounded"><Edit size={16} /></button>
               <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-100 text-red-600 rounded"><Trash2 size={16} /></button>
             </div>
