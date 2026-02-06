@@ -64,7 +64,6 @@ export default function App() {
   const handleReservationSubmit = (data: any) => {
     console.log('Reservation:', data);
     const newRes = { ...data, id: 'RES-' + Math.floor(Math.random() * 10000) };
-    setReservations(prev => [newRes, ...prev]);
     setLastOrderNumber(newRes.id);
     navigate('CONFIRMATION_RESERVATION');
   };

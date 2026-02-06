@@ -407,23 +407,35 @@ const GallerySection = () => {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const loadImages = () => galleryApi.getAll().then(setImages).catch(e => toast.error('Failed to load gallery'));
   useEffect(() => { loadImages(); }, []);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !title) {
-      toast.error('Please enter a title');
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || !title) {
+      toast.error('Please enter a title and select an image');
       return;
     }
     setUploading(true);
     try {
-      await galleryApi.upload(file, title);
+      await galleryApi.upload(selectedFile, title);
       toast.success('Image uploaded');
       setTitle('');
+      setSelectedFile(null);
+      // Reset file input
+      const fileInput = document.getElementById('gallery-file-input') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
       loadImages();
     } catch (error) {
+      console.error('Upload error:', error);
       toast.error('Failed to upload image');
     }
     setUploading(false);
@@ -436,6 +448,7 @@ const GallerySection = () => {
       toast.success('Image deleted');
       loadImages();
     } catch (error) {
+      console.error('Delete error:', error);
       toast.error('Failed to delete');
     }
   };
@@ -444,8 +457,33 @@ const GallerySection = () => {
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-xl border-2 border-[#8D6E63]">
         <h4 className="font-bold mb-4">Upload New Image</h4>
-        <input type="text" placeholder="Image title" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 border rounded-lg mb-4" />
-        <input type="file" accept="image/*" onChange={handleUpload} className="w-full p-3 border rounded-lg" disabled={uploading || !title} />
+        <div className="space-y-4">
+          <input 
+            type="text" 
+            placeholder="Image title" 
+            value={title} 
+            onChange={e => setTitle(e.target.value)} 
+            className="w-full p-3 border rounded-lg" 
+          />
+          <input 
+            id="gallery-file-input"
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileSelect} 
+            className="w-full p-3 border rounded-lg" 
+            disabled={uploading} 
+          />
+          {selectedFile && (
+            <p className="text-sm text-gray-600">Selected: {selectedFile.name}</p>
+          )}
+          <Button 
+            onClick={handleUpload} 
+            disabled={uploading || !title || !selectedFile}
+            fullWidth
+          >
+            {uploading ? 'Uploading...' : 'Upload Image'}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
