@@ -98,6 +98,21 @@ ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read" ON settings FOR SELECT USING (true);
 CREATE POLICY "Allow authenticated full access" ON settings FOR ALL USING (auth.role() = 'authenticated');
 
+-- 6. CONTACT MESSAGES TABLE
+CREATE TABLE contact_messages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  message TEXT NOT NULL,
+  status TEXT DEFAULT 'unread',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public insert" ON contact_messages FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated full access" ON contact_messages FOR ALL USING (auth.role() = 'authenticated');
+
 -- ============================================
 -- DONE! You should see "Success. No rows returned"
 -- ============================================

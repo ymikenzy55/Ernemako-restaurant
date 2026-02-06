@@ -5,6 +5,7 @@ import { ScreenType } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { Button } from '../components/Button';
+import { ContactForm } from '../components/ContactForm';
 
 interface HomeScreenProps {
   onNavigate: (screen: ScreenType) => void;
@@ -468,7 +469,90 @@ const ContactSection = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Contact Form */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <ContactForm />
+          </motion.div>
+
+          {/* Contact Info Cards */}
+          <div className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              viewport={{ once: true }}
+              className="bg-white p-6 rounded-2xl shadow-md border-2 border-[#8D6E63]/20 hover:shadow-xl hover:border-[#8D6E63]/40 transition-all"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#8D6E63]/10 flex items-center justify-center text-[#8D6E63] mb-4 border-2 border-[#8D6E63]/20">
+                <MapPin size={24} />
+              </div>
+              <h4 className="font-bold text-[#3E2723] mb-2">Visit Us</h4>
+              <p className="text-[#5D4037] text-sm mb-3">
+                Ernemako Restaurant<br />
+                Opposite Fiapre Park<br />
+                Sunyani, Bono Region<br />
+                Ghana
+              </p>
+              <a
+                href="https://www.google.com/maps/dir/?api=1&destination=7.34,-2.33&destination_place_id=ChIJYTN9FjhS2w8RQS4Hk0kJl-Q"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#8D6E63] text-xs font-bold uppercase hover:underline inline-flex items-center gap-1"
+                title="Get directions to Ernemako Restaurant"
+              >
+                Get Directions →
+              </a>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="bg-white p-6 rounded-2xl shadow-md border-2 border-[#8D6E63]/20 hover:shadow-xl hover:border-[#8D6E63]/40 transition-all"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#8D6E63]/10 flex items-center justify-center text-[#8D6E63] mb-4 border-2 border-[#8D6E63]/20">
+                <Phone size={24} />
+              </div>
+              <h4 className="font-bold text-[#3E2723] mb-2">Call Us</h4>
+              <p className="text-[#5D4037] text-sm mb-3">For reservations and support</p>
+              <a
+                href="tel:+233244567890"
+                className="text-lg font-bold text-[#8D6E63] hover:underline"
+              >
+                +233 24 456 7890
+              </a>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              viewport={{ once: true }}
+              className="bg-white p-6 rounded-2xl shadow-md border-2 border-[#8D6E63]/20 hover:shadow-xl hover:border-[#8D6E63]/40 transition-all"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#8D6E63]/10 flex items-center justify-center text-[#8D6E63] mb-4 border-2 border-[#8D6E63]/20">
+                <Mail size={24} />
+              </div>
+              <h4 className="font-bold text-[#3E2723] mb-2">Email Us</h4>
+              <p className="text-[#5D4037] text-sm mb-3">General inquiries</p>
+              <a
+                href="mailto:hello@ernemakorestaurant.com"
+                className="text-[#8D6E63] font-medium hover:underline break-all"
+              >
+                hello@ernemakorestaurant.com
+              </a>
+            </motion.div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 hidden">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

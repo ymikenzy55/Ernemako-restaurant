@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { ScreenType, ReservationData } from '../types';
 import { ArrowLeft, Calendar, Clock, User, Users, Search, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { reservationApi } from '../../lib/adminApi';
 
 interface ReservationScreenProps {
   onNavigate: (screen: ScreenType) => void;
@@ -12,24 +13,62 @@ interface ReservationScreenProps {
 
 export const ReservationScreen = ({ onNavigate, onSubmit }: ReservationScreenProps) => {
   const [activeTab, setActiveTab] = useState<'new' | 'existing'>('new');
-  const { register, handleSubmit, formState: { errors } } = useForm<ReservationData>();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ReservationData>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   
   // Separate form state for existing booking search to avoid conflict
   const [bookingRef, setBookingRef] = useState('');
+  const [searchError, setSearchError] = useState<string | null>(null);
 
-  const handleExistingSubmit = (e: React.FormEvent) => {
+  const handleNewReservation = async (data: ReservationData) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      await reservationApi.create({
+        name: data.name,
+        phone: data.phone,
+        date: data.date,
+        time: data.time,
+        party_size: Number(data.partySize)
+      });
+      
+      reset();
+      onSubmit(data); // Show success message
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      setSubmitError('Failed to create reservation. Please try again or call us directly.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleExistingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSearchError(null);
+    
     if (bookingRef) {
-      // Mock finding a reservation
-      const mockData: ReservationData = {
-        name: "Kwame Mensah",
-        date: "2024-02-14",
-        time: "19:00",
-        partySize: 2,
-        phone: "+233 24 456 7890"
-      };
-      // Simulate found and confirm
-      onSubmit(mockData);
+      try {
+        const reservations = await reservationApi.findByPhone(bookingRef);
+        
+        if (reservations.length > 0) {
+          const latest = reservations[0];
+          const mockData: ReservationData = {
+            name: latest.name,
+            date: latest.date,
+            time: latest.time,
+            partySize: latest.party_size,
+            phone: latest.phone
+          };
+          onSubmit(mockData);
+        } else {
+          setSearchError('No reservation found with that phone number.');
+        }
+      } catch (error) {
+        console.error('Error finding reservation:', error);
+        setSearchError('Error searching for reservation. Please try again.');
+      }
     }
   };
 
@@ -72,9 +111,15 @@ export const ReservationScreen = ({ onNavigate, onSubmit }: ReservationScreenPro
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
-              onSubmit={handleSubmit(onSubmit)} 
+              onSubmit={handleSubmit(handleNewReservation)} 
               className="space-y-6"
             >
+              {submitError && (
+                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-red-700 text-sm">
+                  {submitError}
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-[#5D4037] flex items-center gap-2">
@@ -139,8 +184,8 @@ export const ReservationScreen = ({ onNavigate, onSubmit }: ReservationScreenPro
               </div>
 
               <div className="pt-4">
-                <Button type="submit" fullWidth size="lg">
-                  Confirm Reservation
+                <Button type="submit" fullWidth size="lg" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating Reservation...' : 'Confirm Reservation'}
                 </Button>
               </div>
             </motion.form>
@@ -158,20 +203,26 @@ export const ReservationScreen = ({ onNavigate, onSubmit }: ReservationScreenPro
                 <Smartphone size={24} className="mt-1" />
                 <div>
                   <p className="font-bold">Find your reservation</p>
-                  <p className="text-sm">Enter the phone number or booking reference code you received in your confirmation email.</p>
+                  <p className="text-sm">Enter the phone number you used when making your reservation.</p>
                 </div>
               </div>
 
+              {searchError && (
+                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 text-red-700 text-sm">
+                  {searchError}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[#5D4037] flex items-center gap-2">
-                  Booking Reference or Phone Number
+                  Phone Number
                 </label>
                 <div className="relative">
                   <input
                     value={bookingRef}
                     onChange={(e) => setBookingRef(e.target.value)}
                     className="w-full pl-12 pr-4 py-4 rounded-xl bg-[#FDFBF7] border border-[#D7CCC8] focus:border-[#8D6E63] focus:ring-1 focus:ring-[#8D6E63] outline-none transition-all text-lg"
-                    placeholder="e.g. RES-1234 or +233..."
+                    placeholder="+233 24 456 7890"
                     required
                   />
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8D6E63]" size={20} />
