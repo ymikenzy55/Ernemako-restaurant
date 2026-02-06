@@ -131,7 +131,7 @@ export const RegisterScreen = ({ onNavigate, onLogin }: AuthProps) => {
       >
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-[#3E2723] mb-2">Create Account</h2>
-          <p className="text-[#5D4037]/70">Join Esbak Kitchen rewards</p>
+          <p className="text-[#5D4037]/70">Join Ernemako Restaurant rewards</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

@@ -74,8 +74,14 @@ export const ActionCard = ({
           aria-label={title}
           className={cn(
             "relative overflow-hidden bg-white rounded-xl sm:rounded-2xl shadow-lg cursor-pointer group border-2 transition-all duration-300",
-            image ? "min-h-[180px] sm:min-h-[200px] border-[#D7CCC8]/30 hover:border-[#8D6E63]/50" : "min-h-[140px] sm:min-h-[160px] border-[#8D6E63]/40 hover:border-[#8D6E63] hover:shadow-xl"
+            image 
+              ? "min-h-[180px] sm:min-h-[200px] border-white/30 hover:border-white/60 hover:shadow-2xl" 
+              : "min-h-[140px] sm:min-h-[160px] border-[#8D6E63]/30 hover:border-[#8D6E63]/60 hover:shadow-xl"
           )}
+          style={image ? {
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+            backdropFilter: 'blur(10px)',
+          } : {}}
         >
           {image && (
             <div className="absolute inset-0 z-0">

@@ -100,7 +100,7 @@ export const ContactScreen = ({ onNavigate }: InfoScreenProps) => (
           </div>
           <div>
             <h4 className="font-bold text-[#3E2723]">Visit Us</h4>
-            <p className="text-[#5D4037] text-sm mt-1">Esbak Kitchen<br/>Sunyani, Bono Region<br/>Ghana</p>
+            <p className="text-[#5D4037] text-sm mt-1">Ernemako Restaurant<br/>Sunyani, Bono Region<br/>Ghana</p>
             <a href="https://www.google.com/maps/search/Sunyani" target="_blank" rel="noopener noreferrer" className="text-[#8D6E63] text-xs font-bold uppercase mt-2 inline-block hover:underline">Get Directions</a>
           </div>
         </div>
@@ -123,7 +123,7 @@ export const ContactScreen = ({ onNavigate }: InfoScreenProps) => (
           <div>
             <h4 className="font-bold text-[#3E2723]">Email Us</h4>
             <p className="text-[#5D4037] text-sm mt-1">General inquiries</p>
-            <a href="mailto:hello@esbakkitchen.com" className="text-[#8D6E63] font-medium block mt-1 hover:underline">hello@esbakkitchen.com</a>
+            <a href="mailto:hello@ernemakorestaurant.com" className="text-[#8D6E63] font-medium block mt-1 hover:underline">hello@ernemakorestaurant.com</a>
           </div>
         </div>
       </motion.div>
@@ -152,7 +152,7 @@ export const AboutScreen = ({ onNavigate }: InfoScreenProps) => (
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
           <h3 className="text-2xl font-bold text-[#3E2723] mb-4">Authentic Ghanaian Hospitality</h3>
           <p className="text-[#5D4037]/90 leading-relaxed mb-4">
-            Founded in the heart of Sunyani, Esbak Kitchen began with a simple mission: to serve authentic, soul-warming Ghanaian dishes in a modern, welcoming environment.
+            Founded in the heart of Sunyani, Ernemako Restaurant began with a simple mission: to serve authentic, soul-warming Ghanaian dishes in a modern, welcoming environment.
           </p>
           <p className="text-[#5D4037]/90 leading-relaxed">
             We believe that great food brings people together. That's why we source our ingredients locally from farmers in the Bono Region, ensuring every bite bursts with freshness and flavor.

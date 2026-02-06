@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScreenType, MenuItem, CartItem } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Search, Plus, X } from 'lucide-react';
+import { ArrowLeft, Search, Plus, X, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -137,6 +137,7 @@ export const MenuScreen = ({ onNavigate, cart, addToCart }: MenuScreenProps) => 
   const [modalQuantity, setModalQuantity] = useState(1);
   const [modalInstructions, setModalInstructions] = useState('');
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [showCallModal, setShowCallModal] = useState(false);
 
   const filteredItems = MOCK_MENU.filter(item => {
     const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
@@ -196,7 +197,7 @@ export const MenuScreen = ({ onNavigate, cart, addToCart }: MenuScreenProps) => 
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, duration: 0.3 }}
             whileHover={{ y: -5, scale: 1.02 }}
-            className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#D7CCC8]/30 hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full group"
+            className="bg-white rounded-2xl overflow-hidden shadow-md border-2 border-[#8D6E63]/20 hover:shadow-xl hover:border-[#8D6E63]/40 transition-all cursor-pointer flex flex-col h-full group"
             onClick={() => setSelectedItem(item)}
           >
             <div className="h-48 overflow-hidden relative bg-gray-100">
@@ -240,11 +241,11 @@ export const MenuScreen = ({ onNavigate, cart, addToCart }: MenuScreenProps) => 
                   className="w-full mt-auto"
                   onClick={(e) => {
                     e.stopPropagation();
-                    addToCart(item, 1);
+                    setShowCallModal(true);
                   }}
                 >
-                  <Plus size={16} className="mr-2" /> 
-                  <span>Add</span>
+                  <Phone size={16} className="mr-2" /> 
+                  <span>Call to Order</span>
                 </Button>
               </motion.div>
             </div>
@@ -341,12 +342,12 @@ export const MenuScreen = ({ onNavigate, cart, addToCart }: MenuScreenProps) => 
                       </button>
                    </div>
                    <Button onClick={() => {
-                     addToCart(selectedItem, modalQuantity, modalInstructions);
                      setSelectedItem(null);
                      setModalQuantity(1);
                      setModalInstructions('');
+                     setShowCallModal(true);
                    }}>
-                     Add to Order - GH₵ {(selectedItem.price * modalQuantity).toFixed(2)}
+                     Call to Order
                    </Button>
                 </div>
               </div>
@@ -355,8 +356,101 @@ export const MenuScreen = ({ onNavigate, cart, addToCart }: MenuScreenProps) => 
         )}
       </AnimatePresence>
 
-      {/* Floating Cart Button */}
-      {cartTotalItems > 0 && (
+      {/* Call to Order Modal */}
+      <AnimatePresence>
+        {showCallModal && (
+          <div 
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowCallModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative bg-gradient-to-br from-[#8D6E63] to-[#5D4037] p-8 text-white">
+                <button
+                  onClick={() => setShowCallModal(false)}
+                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/20 transition-colors"
+                  aria-label="Close"
+                >
+                  <X size={20} />
+                </button>
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
+                    <Phone size={32} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Call to Order</h2>
+                    <p className="text-white/80 text-sm">We're here to help!</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-[#8D6E63] font-medium mb-2">Main Line</p>
+                    <a
+                      href="tel:+233123456789"
+                      className="flex items-center justify-between p-4 bg-[#FDFBF7] rounded-xl hover:bg-[#8D6E63]/10 transition-colors group"
+                    >
+                      <div>
+                        <p className="font-bold text-[#3E2723] text-lg">+233 123 456 789</p>
+                        <p className="text-sm text-[#8D6E63]">For orders & reservations</p>
+                      </div>
+                      <Phone className="text-[#8D6E63] group-hover:scale-110 transition-transform" size={24} />
+                    </a>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-[#8D6E63] font-medium mb-2">WhatsApp</p>
+                    <a
+                      href="https://wa.me/233123456789?text=Hi%2C%20I%27d%20like%20to%20place%20an%20order"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-4 bg-[#FDFBF7] rounded-xl hover:bg-[#8D6E63]/10 transition-colors group"
+                    >
+                      <div>
+                        <p className="font-bold text-[#3E2723] text-lg">Message Us</p>
+                        <p className="text-sm text-[#8D6E63]">Quick response via WhatsApp</p>
+                      </div>
+                      <svg className="text-[#8D6E63] group-hover:scale-110 transition-transform" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                      </svg>
+                    </a>
+                  </div>
+
+                  <div className="pt-4 border-t border-[#D7CCC8]">
+                    <p className="text-sm text-[#8D6E63] mb-2">
+                      <span className="font-bold">Hours:</span> Mon-Sun, 11:00 AM - 10:00 PM
+                    </p>
+                    <p className="text-xs text-[#8D6E63]/70">
+                      Average response time: 2-5 minutes
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <Button
+                    variant="outline"
+                    fullWidth
+                    onClick={() => setShowCallModal(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Cart Button - Hidden since we're using call to order */}
+      {cartTotalItems > 0 && false && (
         <motion.div 
           initial={{ y: 100 }}
           animate={{ y: 0 }}

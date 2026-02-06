@@ -8,7 +8,9 @@ import { CartScreen } from './screens/CartScreen';
 import { PaymentScreen } from './screens/PaymentScreen';
 import { UserDashboardScreen } from './screens/UserDashboardScreen';
 import { SignInScreen, RegisterScreen } from './screens/AuthScreens';
-import { HelpScreen, ContactScreen, AboutScreen } from './screens/InfoScreens';
+import { HelpScreen } from './screens/InfoScreens';
+import { AdminLogin } from './screens/AdminLogin';
+import { AdminDashboard } from './screens/AdminDashboard';
 import { ScreenType, MenuItem, CartItem } from './types';
 import { Button } from './components/Button';
 import { CheckCircle } from 'lucide-react';
@@ -19,33 +21,11 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('HOME');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [lastOrderNumber, setLastOrderNumber] = useState<string>('');
-  
-  // User State
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<any>({ name: 'Kwame Mensah', email: 'kwame@example.com' });
-  const [orders, setOrders] = useState<any[]>([
-    { id: '4829', date: '2024-02-01', items: 3, total: 85.00 },
-    { id: '4102', date: '2024-01-25', items: 2, total: 60.00 }
-  ]);
-  const [reservations, setReservations] = useState<any[]>([
-    { id: 'RES-101', date: '2024-02-14', time: '19:00', partySize: 2 }
-  ]);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
   const navigate = (screen: ScreenType) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setCurrentScreen(screen);
-  };
-
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    navigate('HOME');
-    toast.success("Welcome back, Kwame!");
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    navigate('HOME');
-    toast.success("Logged out successfully");
   };
 
   const addToCart = (item: MenuItem, quantity: number, instructions?: string) => {
@@ -97,13 +77,6 @@ export default function App() {
 
   const handlePaymentComplete = () => {
     const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) * 1.10;
-    const newOrder = {
-      id: Math.floor(Math.random() * 10000).toString(),
-      date: new Date().toLocaleDateString(),
-      items: cart.reduce((acc, item) => acc + item.quantity, 0),
-      total: total
-    };
-    setOrders(prev => [newOrder, ...prev]);
     setCart([]);
     navigate('HOME');
     toast.success("Order completed successfully!");
@@ -126,21 +99,24 @@ export default function App() {
         const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0) * 1.10;
         return <PaymentScreen onNavigate={navigate} onComplete={handlePaymentComplete} total={total} />;
       
-      // User & Auth
-      case 'DASHBOARD':
-        return <UserDashboardScreen onNavigate={navigate} user={user} orders={orders} reservations={reservations} onLogout={handleLogout} />;
-      case 'SIGN_IN':
-        return <SignInScreen onNavigate={navigate} onLogin={handleLogin} />;
-      case 'REGISTER':
-        return <RegisterScreen onNavigate={navigate} onLogin={handleLogin} />;
-      
       // Info
       case 'HELP':
         return <HelpScreen onNavigate={navigate} />;
-      case 'CONTACT':
-        return <ContactScreen onNavigate={navigate} />;
-      case 'ABOUT':
-        return <AboutScreen onNavigate={navigate} />;
+
+      // Admin
+      case 'ADMIN_LOGIN':
+        return <AdminLogin onLogin={() => {
+          setIsAdminAuthenticated(true);
+          navigate('ADMIN_DASHBOARD');
+        }} />;
+      case 'ADMIN_DASHBOARD':
+        if (!isAdminAuthenticated) {
+          return <AdminLogin onLogin={() => {
+            setIsAdminAuthenticated(true);
+            navigate('ADMIN_DASHBOARD');
+          }} />;
+        }
+        return <AdminDashboard />;
 
       // Confirmation
       case 'CONFIRMATION_RESERVATION':
@@ -167,8 +143,18 @@ export default function App() {
     }
   };
 
+  // Render admin without layout
+  if (currentScreen === 'ADMIN_LOGIN' || currentScreen === 'ADMIN_DASHBOARD') {
+    return (
+      <>
+        <Toaster position="top-center" />
+        {renderScreen()}
+      </>
+    );
+  }
+
   return (
-    <Layout onNavigate={navigate} isLoggedIn={isLoggedIn} onLogout={handleLogout}>
+    <Layout onNavigate={navigate}>
       <Toaster position="top-center" />
       {renderScreen()}
     </Layout>

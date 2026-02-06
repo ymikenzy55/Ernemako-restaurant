@@ -1,6 +1,6 @@
-# Esbak Kitchen - Restaurant Kiosk
+# Ernemako Kitchen - Restaurant Kiosk
 
-A modern self-service kiosk application for Esbak Kitchen restaurant.
+A modern self-service kiosk application for Ernemako Kitchen restaurant.
 
 ## 🚀 Quick Start
 
@@ -32,4 +32,4 @@ npm run preview
 
 ## 📄 License
 
-© 2025 Esbak Kitchen. All rights reserved.
+© 2025 Ernemako Kitchen. All rights reserved.
