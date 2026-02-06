@@ -5,12 +5,14 @@ export interface MenuItem {
   name: string;
   description: string;
   price: number;
-  category: 'Appetizers' | 'Entrees' | 'Desserts' | 'Beverages';
-  image: string;
-  badges: ('Vegetarian' | 'Vegan' | 'Gluten-Free' | 'Spicy')[];
+  category: string;
+  image_url: string;
+  status: string;
+  created_at?: string;
 }
 
-export interface CartItem extends MenuItem {
+export interface CartItem extends Omit<MenuItem, 'image_url'> {
+  image_url: string;
   quantity: number;
   instructions?: string;
 }
