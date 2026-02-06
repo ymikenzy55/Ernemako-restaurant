@@ -12,6 +12,15 @@ ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT false;
 -- Create index for faster featured item queries
 CREATE INDEX IF NOT EXISTS idx_menu_items_featured ON menu_items(featured) WHERE featured = true;
 
+-- Add hero_banner setting to settings table
+INSERT INTO settings (key, value) VALUES
+('hero_banner', '{
+  "image_url": "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=60&auto=format&fit=crop",
+  "title": "Welcome to Ernemako Restaurant",
+  "subtitle": "Authentic Ghanaian Cuisine in the Heart of Sunyani"
+}'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
 -- ============================================
 -- STORAGE BUCKET SETUP
 -- Go to Storage in Supabase Dashboard and ensure:

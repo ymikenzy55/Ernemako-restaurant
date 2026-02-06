@@ -897,19 +897,25 @@ const FeaturedMenuSection = ({ onNavigate }: { onNavigate: (screen: ScreenType) 
 
 // Instagram Gallery Component
 const InstagramGallerySection = () => {
-  const [loadingStates, setLoadingStates] = useState<{ [key: number]: boolean }>({});
+  const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const galleryImages = [
-    'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=1200&q=80&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1606923829579-0cb981a83e2e?w=1200&q=80&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=1200&q=80&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=1200&q=80&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=1200&q=80&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&q=80&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=80&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1626094309830-abbb0c99da4a?w=1200&q=80&auto=format&fit=crop',
-  ];
+  useEffect(() => {
+    // Load gallery images from database
+    import('../../lib/adminApi').then(({ galleryApi }) => {
+      galleryApi.getAll()
+        .then(images => {
+          setGalleryImages(images);
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error('Failed to load gallery:', error);
+          setLoading(false);
+        });
+    });
+  }, []);
 
   const handlePrevious = () => {
     if (selectedImage !== null) {
@@ -935,6 +941,22 @@ const InstagramGallerySection = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedImage]);
 
+  if (loading) {
+    return (
+      <div className="relative z-20 py-16 md:py-24 bg-[#FDFBF7]">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8D6E63]"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (galleryImages.length === 0) {
+    return null; // Don't show section if no images
+  }
+
   return (
     <>
     <div className="relative z-20 py-16 md:py-24 bg-[#FDFBF7]">
@@ -956,7 +978,7 @@ const InstagramGallerySection = () => {
             A visual journey through Ernemako Restaurant
           </p>
           <a
-            href="https://instagram.com"
+            href="https://instagram.com/ernemakorestaurant"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-[#8D6E63] hover:text-[#795548] font-medium transition-colors"
@@ -969,7 +991,7 @@ const InstagramGallerySection = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {galleryImages.map((image, index) => (
             <motion.div
-              key={index}
+              key={image.id}
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
@@ -979,15 +1001,15 @@ const InstagramGallerySection = () => {
               onClick={() => setSelectedImage(index)}
             >
               {/* Loading Skeleton */}
-              {!loadingStates[index] && (
+              {!loadingStates[image.id] && (
                 <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200" />
               )}
               
               <ImageWithFallback
-                src={image}
-                alt={`Gallery image ${index + 1}`}
-                className={`w-full h-full object-cover transition-all duration-500 ${loadingStates[index] ? 'opacity-100' : 'opacity-0'}`}
-                onLoad={() => setLoadingStates(prev => ({ ...prev, [index]: true }))}
+                src={image.image_url}
+                alt={image.title}
+                className={`w-full h-full object-cover transition-all duration-500 ${loadingStates[image.id] ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setLoadingStates(prev => ({ ...prev, [image.id]: true }))}
               />
               
               {/* Hover Overlay */}
@@ -1070,8 +1092,8 @@ const InstagramGallerySection = () => {
           onClick={(e) => e.stopPropagation()}
         >
           <img
-            src={galleryImages[selectedImage]}
-            alt={`Gallery image ${selectedImage + 1}`}
+            src={galleryImages[selectedImage]?.image_url}
+            alt={galleryImages[selectedImage]?.title || `Gallery image ${selectedImage + 1}`}
             className="w-full h-full object-contain rounded-lg"
           />
         </motion.div>

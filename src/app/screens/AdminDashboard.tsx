@@ -10,7 +10,7 @@ import {
 } from '../../lib/adminApi';
 import { toast } from 'sonner';
 
-type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'reservations' | 'messages' | 'about';
+type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'reservations' | 'messages' | 'about' | 'hero';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -26,6 +26,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
     { id: 'menu' as AdminSection, label: 'Menu', icon: UtensilsCrossed },
     { id: 'gallery' as AdminSection, label: 'Gallery', icon: ImageIcon },
     { id: 'about' as AdminSection, label: 'About Page', icon: FileText },
+    { id: 'hero' as AdminSection, label: 'Hero Banner', icon: ImageIcon },
   ];
 
   return (
@@ -72,6 +73,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
           {activeSection === 'menu' && <MenuSection />}
           {activeSection === 'gallery' && <GallerySection />}
           {activeSection === 'about' && <AboutSection />}
+          {activeSection === 'hero' && <HeroBannerSection />}
         </main>
       </div>
     </div>
@@ -575,6 +577,131 @@ const AboutSection = () => {
         </div>
         <Button type="submit" disabled={loading}>Save Changes</Button>
       </form>
+    </div>
+  );
+};
+
+const HeroBannerSection = () => {
+  const [heroBanner, setHeroBanner] = useState<any>(null);
+  const [formData, setFormData] = useState({ image_url: '', title: '', subtitle: '' });
+  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Load hero banner settings
+    import('../../lib/supabase').then(({ supabase }) => {
+      supabase
+        .from('settings')
+        .select('*')
+        .eq('key', 'hero_banner')
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Failed to load hero banner:', error);
+          } else if (data) {
+            const banner = data.value;
+            setHeroBanner(banner);
+            setFormData({
+              image_url: banner.image_url || '',
+              title: banner.title || '',
+              subtitle: banner.subtitle || ''
+            });
+          }
+          setLoading(false);
+        });
+    });
+  }, []);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { menuApi } = await import('../../lib/adminApi');
+      const url = await menuApi.uploadImage(file);
+      setFormData(prev => ({ ...prev, image_url: url }));
+      toast.success('Image uploaded');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image');
+    }
+    setUploading(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      // Update hero_banner setting in settings table
+      const { supabase } = await import('../../lib/supabase');
+      const { error } = await supabase
+        .from('settings')
+        .update({ value: formData })
+        .eq('key', 'hero_banner');
+
+      if (error) throw error;
+      toast.success('Hero banner updated');
+      setHeroBanner(formData);
+    } catch (error) {
+      console.error('Update error:', error);
+      toast.error('Failed to update hero banner');
+    }
+    setLoading(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8D6E63]"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-xl">
+        <h3 className="text-xl font-bold mb-6">Hero Banner Settings</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block font-medium mb-2">Banner Image</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handleImageUpload} 
+              className="w-full p-3 border rounded-lg mb-4" 
+              disabled={uploading} 
+            />
+            {formData.image_url && (
+              <img src={formData.image_url} alt="Hero banner preview" className="w-full h-64 object-cover rounded-lg" />
+            )}
+          </div>
+          <div>
+            <label className="block font-medium mb-2">Title</label>
+            <input 
+              type="text" 
+              value={formData.title} 
+              onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))} 
+              className="w-full p-3 border rounded-lg" 
+              placeholder="Welcome to Ernemako Restaurant"
+              required 
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-2">Subtitle</label>
+            <input 
+              type="text" 
+              value={formData.subtitle} 
+              onChange={e => setFormData(prev => ({ ...prev, subtitle: e.target.value }))} 
+              className="w-full p-3 border rounded-lg" 
+              placeholder="Authentic Ghanaian Cuisine"
+              required 
+            />
+          </div>
+          <Button type="submit" disabled={uploading || loading}>
+            {uploading ? 'Uploading...' : 'Save Changes'}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 };
