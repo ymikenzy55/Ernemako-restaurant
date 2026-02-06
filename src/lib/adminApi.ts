@@ -6,8 +6,9 @@ import { supabase } from './supabase';
 
 export interface GalleryImage {
   id: string;
-  url: string;
+  image_url: string;
   title: string;
+  storage_path?: string;
   created_at: string;
 }
 
@@ -44,7 +45,7 @@ export const galleryApi = {
     // Create database entry
     const { data, error } = await supabase
       .from('gallery')
-      .insert([{ url: publicUrl, title, storage_path: filePath }])
+      .insert([{ image_url: publicUrl, title, storage_path: filePath }])
       .select()
       .single();
 
@@ -82,7 +83,7 @@ export interface MenuItem {
   price: number;
   category: string;
   image_url: string;
-  is_available: boolean;
+  status: string;
   created_at: string;
 }
 
@@ -159,13 +160,14 @@ export const menuApi = {
 
 export interface Reservation {
   id: string;
-  name: string;
+  customer_name: string;
   phone: string;
+  email?: string;
   date: string;
   time: string;
-  party_size: number;
+  guests: number;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  notes?: string;
+  special_requests?: string;
   created_at: string;
 }
 
@@ -186,7 +188,16 @@ export const reservationApi = {
   async create(reservation: Omit<Reservation, 'id' | 'created_at' | 'status'>): Promise<Reservation> {
     const { data, error } = await supabase
       .from('reservations')
-      .insert([{ ...reservation, status: 'pending' }])
+      .insert([{ 
+        customer_name: reservation.customer_name,
+        phone: reservation.phone,
+        email: reservation.email,
+        date: reservation.date,
+        time: reservation.time,
+        guests: reservation.guests,
+        special_requests: reservation.special_requests,
+        status: 'pending' 
+      }])
       .select()
       .single();
 

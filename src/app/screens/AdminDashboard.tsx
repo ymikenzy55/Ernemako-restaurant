@@ -29,13 +29,13 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   ];
 
   return (
-    <div className="flex h-screen bg-[#FDFBF7]">
-      <aside className="w-64 bg-gradient-to-b from-[#3E2723] to-[#2C1810] text-white flex flex-col">
+    <div className="flex flex-col md:flex-row h-screen bg-[#FDFBF7]">
+      <aside className="w-full md:w-64 bg-gradient-to-b from-[#3E2723] to-[#2C1810] text-white flex flex-col">
         <div className="p-6 border-b border-white/10">
           <h1 className="font-bold text-lg">ERNEMAKO</h1>
           <p className="text-xs text-[#D7CCC8]">Admin Panel</p>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -47,7 +47,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
                 }`}
               >
                 <Icon size={20} />
-                <span>{item.label}</span>
+                <span className="text-sm md:text-base">{item.label}</span>
               </button>
             );
           })}
@@ -60,12 +60,12 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
         </div>
       </aside>
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b px-8 py-4">
-          <h2 className="text-2xl font-bold text-[#3E2723]">
+        <header className="bg-white border-b px-4 md:px-8 py-4">
+          <h2 className="text-xl md:text-2xl font-bold text-[#3E2723]">
             {menuItems.find(i => i.id === activeSection)?.label}
           </h2>
         </header>
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {activeSection === 'dashboard' && <DashboardSection />}
           {activeSection === 'messages' && <MessagesSection />}
           {activeSection === 'reservations' && <ReservationsSection />}
@@ -242,16 +242,16 @@ const ReservationsSection = () => {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h4 className="font-bold text-lg">{res.name}</h4>
+                    <h4 className="font-bold text-lg">{res.customer_name}</h4>
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(res.status)}`}>
                       {res.status.toUpperCase()}
                     </span>
                   </div>
                   <div className="space-y-1 text-sm">
                     <p><Calendar size={16} className="inline mr-2" />{res.date} at {res.time}</p>
-                    <p><UtensilsCrossed size={16} className="inline mr-2" />{res.party_size} guests</p>
+                    <p><UtensilsCrossed size={16} className="inline mr-2" />{res.guests} guests</p>
                     <p><MessageSquare size={16} className="inline mr-2" />{res.phone}</p>
-                    {res.notes && <p className="text-gray-600 italic">Note: {res.notes}</p>}
+                    {res.special_requests && <p className="text-gray-600 italic">Note: {res.special_requests}</p>}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -287,7 +287,7 @@ const MenuSection = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', is_available: true });
+  const [formData, setFormData] = useState({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active' });
   const [uploading, setUploading] = useState(false);
 
   const loadItems = () => menuApi.getAll().then(setItems).catch(e => toast.error('Failed to load menu items'));
@@ -305,10 +305,11 @@ const MenuSection = () => {
       }
       setShowForm(false);
       setEditingItem(null);
-      setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', is_available: true });
+      setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active' });
       loadItems();
     } catch (error) {
       toast.error('Failed to save menu item');
+      console.error(error);
     }
   };
 
@@ -339,7 +340,7 @@ const MenuSection = () => {
 
   const handleEdit = (item: MenuItem) => {
     setEditingItem(item);
-    setFormData({ name: item.name, description: item.description, price: item.price, category: item.category, image_url: item.image_url, is_available: item.is_available });
+    setFormData({ name: item.name, description: item.description, price: item.price, category: item.category, image_url: item.image_url, status: item.status });
     setShowForm(true);
   };
 
@@ -347,7 +348,7 @@ const MenuSection = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-bold">Menu Items ({items.length})</h3>
-        <Button onClick={() => { setShowForm(true); setEditingItem(null); setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', is_available: true }); }}>
+        <Button onClick={() => { setShowForm(true); setEditingItem(null); setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active' }); }}>
           <Plus size={20} /> Add Menu Item
         </Button>
       </div>
@@ -370,7 +371,7 @@ const MenuSection = () => {
               {formData.image_url && <img src={formData.image_url} alt="Preview" className="mt-2 h-32 object-cover rounded" />}
             </div>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={formData.is_available} onChange={e => setFormData(prev => ({ ...prev, is_available: e.target.checked }))} />
+              <input type="checkbox" checked={formData.status === 'active'} onChange={e => setFormData(prev => ({ ...prev, status: e.target.checked ? 'active' : 'inactive' }))} />
               Available
             </label>
             <div className="flex gap-2">
@@ -389,7 +390,7 @@ const MenuSection = () => {
               <h4 className="font-bold">{item.name}</h4>
               <p className="text-sm text-gray-600">{item.description}</p>
               <p className="font-bold text-[#8D6E63]">GH₵{item.price}</p>
-              <p className="text-xs text-gray-500">{item.category} • {item.is_available ? 'Available' : 'Unavailable'}</p>
+              <p className="text-xs text-gray-500">{item.category} • {item.status === 'active' ? 'Available' : 'Unavailable'}</p>
             </div>
             <div className="flex flex-col gap-2">
               <button onClick={() => handleEdit(item)} className="p-2 hover:bg-gray-100 rounded"><Edit size={16} /></button>
@@ -450,9 +451,9 @@ const GallerySection = () => {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {images.map(img => (
           <div key={img.id} className="relative group">
-            <img src={img.url} alt={img.title} className="w-full h-48 object-cover rounded-xl" />
+            <img src={img.image_url} alt={img.title} className="w-full h-48 object-cover rounded-xl" />
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-              <button onClick={() => handleDelete(img.id, img.url.split('/').pop() || '')} className="p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
+              <button onClick={() => handleDelete(img.id, img.storage_path || '')} className="p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
                 <Trash2 size={20} />
               </button>
             </div>

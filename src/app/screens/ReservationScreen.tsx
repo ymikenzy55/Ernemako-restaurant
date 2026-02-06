@@ -27,11 +27,11 @@ export const ReservationScreen = ({ onNavigate, onSubmit }: ReservationScreenPro
 
     try {
       await reservationApi.create({
-        name: data.name,
+        customer_name: data.name,
         phone: data.phone,
         date: data.date,
         time: data.time,
-        party_size: Number(data.partySize)
+        guests: Number(data.partySize)
       });
       
       reset();
@@ -55,10 +55,10 @@ export const ReservationScreen = ({ onNavigate, onSubmit }: ReservationScreenPro
         if (reservations.length > 0) {
           const latest = reservations[0];
           const mockData: ReservationData = {
-            name: latest.name,
+            name: latest.customer_name,
             date: latest.date,
             time: latest.time,
-            partySize: latest.party_size,
+            partySize: latest.guests,
             phone: latest.phone
           };
           onSubmit(mockData);
