@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Contact Messages Table</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Contact Messages Table</h1>
+    <button onclick="testTable()">Test Table</button>
+    <button onclick="testInsert()">Test Insert</button>
+    <div id="result"></div>
+
+    <script>
+        // Replace with your actual credentials from .env.local
+        const SUPABASE_URL = 'https://zxnsyhzexecyhkxtpypp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4bnN5aHpleGVjeWhreHRweXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMzE4NDcsImV4cCI6MjA4NTkwNzg0N30.Z3-zKuIEqo_vujUcJ7PKUVmyxq0aejnv5wqd1r5xHQI';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function testTable() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+
+            try {
+                const { data, error } = await supabase
+                    .from('contact_messages')
+                    .select('*')
+                    .limit(1);
+
+                if (error) {
+                    result.innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>
+                    <p>Code: ${error.code}</p>
+                    <p><strong>The contact_messages table does NOT exist!</strong></p>
+                    <p>You need to run the SQL from create-contact-table.sql in Supabase SQL Editor</p>`;
+                } else {
+                    result.innerHTML = `<p style="color: green;">✅ Table exists! Found ${data.length} messages</p>`;
+                }
+            } catch (err) {
+                result.innerHTML = `<p style="color: red;">❌ Error: ${err.message}</p>`;
+            }
+        }
+
+        async function testInsert() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing insert...';
+
+            try {
+                const { data, error } = await supabase
+                    .from('contact_messages')
+                    .insert([{
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        phone: '+233 24 123 4567',
+                        message: 'This is a test message',
+                        status: 'unread'
+                    }])
+                    .select();
+
+                if (error) {
+                    result.innerHTML = `<p style="color: red;">❌ Insert Error: ${error.message}</p>`;
+                } else {
+                    result.innerHTML = `<p style="color: green;">✅ Message inserted successfully!</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (err) {
+                result.innerHTML = `<p style="color: red;">❌ Error: ${err.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
