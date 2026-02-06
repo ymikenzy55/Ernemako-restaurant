@@ -23,7 +23,9 @@ export const ContactForm = () => {
     setSubmitError(null);
 
     try {
+      console.log('Submitting contact form:', data);
       await contactApi.create(data);
+      console.log('Contact form submitted successfully');
       setSubmitSuccess(true);
       reset();
       
@@ -31,8 +33,9 @@ export const ContactForm = () => {
       setTimeout(() => {
         setSubmitSuccess(false);
       }, 5000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting contact form:', error);
+      console.error('Error details:', error.message, error.code);
       setSubmitError('Failed to send message. Please try again or call us directly.');
     } finally {
       setIsSubmitting(false);
