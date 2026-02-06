@@ -651,41 +651,41 @@ const ContactSection = () => {
 const FeaturedMenuSection = ({ onNavigate }: { onNavigate: (screen: ScreenType) => void }) => {
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
   const [showCallModal, setShowCallModal] = useState(false);
+  const [featuredDishes, setFeaturedDishes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const featuredDishes = [
-    {
-      id: '1',
-      name: 'Jollof Rice',
-      description: 'Aromatic rice in rich tomato sauce with grilled chicken',
-      price: 15.00,
-      image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=600&q=75&auto=format&fit=crop',
-      badge: 'Popular'
-    },
-    {
-      id: '2',
-      name: 'Kelewele',
-      description: 'Spicy fried plantain cubes with ginger and pepper',
-      price: 8.00,
-      image: 'https://images.unsplash.com/photo-1606923829579-0cb981a83e2e?w=600&q=75&auto=format&fit=crop',
-      badge: 'Vegan'
-    },
-    {
-      id: '3',
-      name: 'Banku with Tilapia',
-      description: 'Fermented dough with grilled tilapia and pepper sauce',
-      price: 18.00,
-      image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&q=75&auto=format&fit=crop',
-      badge: 'Chef Special'
-    },
-    {
-      id: '8',
-      name: 'Groundnut Soup',
-      description: 'Rich peanut soup with chicken and fufu',
-      price: 16.00,
-      image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&q=75&auto=format&fit=crop',
-      badge: 'Traditional'
-    }
-  ];
+  useEffect(() => {
+    // Import menuApi dynamically to avoid circular dependencies
+    import('../../lib/adminApi').then(({ menuApi }) => {
+      menuApi.getAll()
+        .then(items => {
+          // Filter for featured and active items
+          const featured = items.filter(item => item.featured && item.status === 'active').slice(0, 4);
+          setFeaturedDishes(featured);
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error('Failed to load featured items:', error);
+          setLoading(false);
+        });
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="relative z-20 px-4 py-16 md:py-24 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8D6E63]"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (featuredDishes.length === 0) {
+    return null; // Don't show section if no featured items
+  }
 
   return (
     <>
@@ -727,14 +727,14 @@ const FeaturedMenuSection = ({ onNavigate }: { onNavigate: (screen: ScreenType) 
                     <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
                   )}
                   <ImageWithFallback
-                    src={dish.image}
+                    src={dish.image_url}
                     alt={dish.name}
                     className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${loadingStates[dish.id] ? 'opacity-100' : 'opacity-0'}`}
                     onLoad={() => setLoadingStates(prev => ({ ...prev, [dish.id]: true }))}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   
-                  {/* Badge */}
+                  {/* Featured Badge */}
                   <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold text-white"
                     style={{
                       background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)',
@@ -742,7 +742,7 @@ const FeaturedMenuSection = ({ onNavigate }: { onNavigate: (screen: ScreenType) 
                       border: '1px solid rgba(255,255,255,0.3)',
                     }}
                   >
-                    {dish.badge}
+                    ⭐ Featured
                   </div>
                 </div>
 
