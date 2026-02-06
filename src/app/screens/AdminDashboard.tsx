@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Image as ImageIcon, UtensilsCrossed, Calendar, 
-  FileText, Settings, LogOut, MessageSquare, UserPlus, Clock
+  FileText, LogOut, MessageSquare, Plus, Trash2, Edit, X, Check
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { 
-  galleryApi, menuApi, reservationApi, contactApi, dashboardApi, adminApi,
-  type GalleryImage, type MenuItem, type Reservation, type ContactMessage
+  galleryApi, menuApi, reservationApi, contactApi, dashboardApi, adminApi, aboutApi,
+  type GalleryImage, type MenuItem, type Reservation, type ContactMessage, type AboutContent
 } from '../../lib/adminApi';
+import { toast } from 'sonner';
 
-// Admin Dashboard - Complete working version
-type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'reservations' | 'messages' | 'about' | 'settings' | 'admin';
+type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'reservations' | 'messages' | 'about';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -19,13 +18,6 @@ interface AdminDashboardProps {
 
 export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
-  const [adminEmail, setAdminEmail] = useState('');
-
-  useEffect(() => {
-    adminApi.getCurrentUser().then(user => {
-      if (user) setAdminEmail(user.email || '');
-    });
-  }, []);
 
   const menuItems = [
     { id: 'dashboard' as AdminSection, label: 'Dashboard', icon: LayoutDashboard },
@@ -33,6 +25,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
     { id: 'reservations' as AdminSection, label: 'Reservations', icon: Calendar },
     { id: 'menu' as AdminSection, label: 'Menu', icon: UtensilsCrossed },
     { id: 'gallery' as AdminSection, label: 'Gallery', icon: ImageIcon },
+    { id: 'about' as AdminSection, label: 'About Page', icon: FileText },
   ];
 
   return (
@@ -78,6 +71,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
           {activeSection === 'reservations' && <ReservationsSection />}
           {activeSection === 'menu' && <MenuSection />}
           {activeSection === 'gallery' && <GallerySection />}
+          {activeSection === 'about' && <AboutSection />}
         </main>
       </div>
     </div>
@@ -107,56 +101,417 @@ const DashboardSection = () => {
 
 const MessagesSection = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
-  useEffect(() => { contactApi.getAll().then(setMessages).catch(console.error); }, []);
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+
+  const loadMessages = () => contactApi.getAll().then(setMessages).catch(e => toast.error('Failed to load messages'));
+  useEffect(() => { loadMessages(); }, []);
+
+  const handleStatusUpdate = async (id: string, status: ContactMessage['status']) => {
+    try {
+      await contactApi.updateStatus(id, status);
+      toast.success(`Message marked as ${status}`);
+      loadMessages();
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this message?')) return;
+    try {
+      await contactApi.delete(id);
+      toast.success('Message deleted');
+      loadMessages();
+    } catch (error) {
+      toast.error('Failed to delete');
+    }
+  };
+
+  const filteredMessages = filter === 'all' ? messages : messages.filter(m => m.status === filter);
+
   return (
-    <div className="space-y-4">
-      {messages.map(msg => (
-        <div key={msg.id} className={`bg-white p-6 rounded-xl border-2 ${msg.status === 'unread' ? 'border-orange-500' : 'border-gray-200'}`}>
-          <h4 className="font-bold">{msg.name}</h4>
-          <p className="text-sm text-gray-600">{msg.email}</p>
-          <p className="mt-2">{msg.message}</p>
-          <div className="flex gap-2 mt-4">
-            {msg.status === 'unread' && (
-              <Button size="sm" onClick={() => contactApi.updateStatus(msg.id, 'read').then(() => contactApi.getAll().then(setMessages))}>
-                Mark Read
-              </Button>
-            )}
-          </div>
+    <div className="space-y-6">
+      <div className="flex gap-2">
+        {['all', 'unread', 'read'].map(f => (
+          <button key={f} onClick={() => setFilter(f as any)} className={`px-4 py-2 rounded-lg font-medium ${filter === f ? 'bg-[#8D6E63] text-white' : 'bg-white border'}`}>
+            {f.charAt(0).toUpperCase() + f.slice(1)} ({f === 'all' ? messages.length : messages.filter(m => m.status === f).length})
+          </button>
+        ))}
+      </div>
+
+      {filteredMessages.length === 0 ? (
+        <div className="bg-white p-12 rounded-xl text-center text-gray-500">
+          No {filter !== 'all' ? filter : ''} messages found
         </div>
-      ))}
+      ) : (
+        <div className="space-y-4">
+          {filteredMessages.map(msg => (
+            <div key={msg.id} className={`bg-white p-6 rounded-xl border-2 ${msg.status === 'unread' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h4 className="font-bold text-lg">{msg.name}</h4>
+                    {msg.status === 'unread' && <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded-full">NEW</span>}
+                  </div>
+                  <p className="text-sm text-gray-600 mb-1">{msg.email} {msg.phone && `• ${msg.phone}`}</p>
+                  <p className="mt-3 text-gray-800">{msg.message}</p>
+                  <p className="text-xs text-gray-400 mt-2">{new Date(msg.created_at).toLocaleString()}</p>
+                </div>
+                <div className="flex flex-col gap-2 ml-4">
+                  {msg.status === 'unread' && (
+                    <Button size="sm" onClick={() => handleStatusUpdate(msg.id, 'read')} className="bg-blue-500">
+                      <Check size={16} /> Mark Read
+                    </Button>
+                  )}
+                  {msg.status === 'read' && (
+                    <Button size="sm" onClick={() => handleStatusUpdate(msg.id, 'replied')} className="bg-green-500">
+                      <Check size={16} /> Replied
+                    </Button>
+                  )}
+                  <button onClick={() => handleDelete(msg.id)} className="p-2 hover:bg-red-100 text-red-600 rounded">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
 const ReservationsSection = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  useEffect(() => { reservationApi.getAll().then(setReservations).catch(console.error); }, []);
+  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all');
+
+  const loadReservations = () => reservationApi.getAll().then(setReservations).catch(e => toast.error('Failed to load reservations'));
+  useEffect(() => { loadReservations(); }, []);
+
+  const handleStatusUpdate = async (id: string, status: Reservation['status']) => {
+    try {
+      await reservationApi.updateStatus(id, status);
+      toast.success(`Reservation ${status}`);
+      loadReservations();
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this reservation?')) return;
+    try {
+      await reservationApi.delete(id);
+      toast.success('Reservation deleted');
+      loadReservations();
+    } catch (error) {
+      toast.error('Failed to delete');
+    }
+  };
+
+  const filteredReservations = filter === 'all' ? reservations : reservations.filter(r => r.status === filter);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-300';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      {reservations.map(res => (
-        <div key={res.id} className="bg-white p-6 rounded-xl border-2 border-gray-200">
-          <h4 className="font-bold">{res.name}</h4>
-          <p>{res.date} at {res.time} - {res.party_size} guests</p>
-          <p className="text-sm">{res.phone}</p>
-          {res.status === 'pending' && (
-            <Button size="sm" className="mt-4" onClick={() => reservationApi.updateStatus(res.id, 'confirmed').then(() => reservationApi.getAll().then(setReservations))}>
-              Confirm
-            </Button>
-          )}
+    <div className="space-y-6">
+      <div className="flex gap-2">
+        {['all', 'pending', 'confirmed', 'completed'].map(f => (
+          <button key={f} onClick={() => setFilter(f as any)} className={`px-4 py-2 rounded-lg font-medium ${filter === f ? 'bg-[#8D6E63] text-white' : 'bg-white border'}`}>
+            {f.charAt(0).toUpperCase() + f.slice(1)} ({f === 'all' ? reservations.length : reservations.filter(r => r.status === f).length})
+          </button>
+        ))}
+      </div>
+
+      {filteredReservations.length === 0 ? (
+        <div className="bg-white p-12 rounded-xl text-center text-gray-500">
+          No {filter !== 'all' ? filter : ''} reservations found
         </div>
-      ))}
+      ) : (
+        <div className="space-y-4">
+          {filteredReservations.map(res => (
+            <div key={res.id} className={`bg-white p-6 rounded-xl border-2 ${getStatusColor(res.status)}`}>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h4 className="font-bold text-lg">{res.name}</h4>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(res.status)}`}>
+                      {res.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <p><Calendar size={16} className="inline mr-2" />{res.date} at {res.time}</p>
+                    <p><UtensilsCrossed size={16} className="inline mr-2" />{res.party_size} guests</p>
+                    <p><MessageSquare size={16} className="inline mr-2" />{res.phone}</p>
+                    {res.notes && <p className="text-gray-600 italic">Note: {res.notes}</p>}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {res.status === 'pending' && (
+                    <>
+                      <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'confirmed')} className="bg-blue-500">
+                        <Check size={16} /> Confirm
+                      </Button>
+                      <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'cancelled')} className="bg-red-500">
+                        <X size={16} /> Cancel
+                      </Button>
+                    </>
+                  )}
+                  {res.status === 'confirmed' && (
+                    <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'completed')} className="bg-green-500">
+                      <Check size={16} /> Complete
+                    </Button>
+                  )}
+                  <button onClick={() => handleDelete(res.id)} className="p-2 hover:bg-red-100 text-red-600 rounded text-sm">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
 const MenuSection = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
-  useEffect(() => { menuApi.getAll().then(setItems).catch(console.error); }, []);
-  return <div className="bg-white p-6 rounded-xl">Found {items.length} menu items</div>;
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [formData, setFormData] = useState({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', is_available: true });
+  const [uploading, setUploading] = useState(false);
+
+  const loadItems = () => menuApi.getAll().then(setItems).catch(e => toast.error('Failed to load menu items'));
+  useEffect(() => { loadItems(); }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingItem) {
+        await menuApi.update(editingItem.id, formData);
+        toast.success('Menu item updated');
+      } else {
+        await menuApi.create(formData);
+        toast.success('Menu item added');
+      }
+      setShowForm(false);
+      setEditingItem(null);
+      setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', is_available: true });
+      loadItems();
+    } catch (error) {
+      toast.error('Failed to save menu item');
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await menuApi.uploadImage(file);
+      setFormData(prev => ({ ...prev, image_url: url }));
+      toast.success('Image uploaded');
+    } catch (error) {
+      toast.error('Failed to upload image');
+    }
+    setUploading(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this menu item?')) return;
+    try {
+      await menuApi.delete(id);
+      toast.success('Menu item deleted');
+      loadItems();
+    } catch (error) {
+      toast.error('Failed to delete');
+    }
+  };
+
+  const handleEdit = (item: MenuItem) => {
+    setEditingItem(item);
+    setFormData({ name: item.name, description: item.description, price: item.price, category: item.category, image_url: item.image_url, is_available: item.is_available });
+    setShowForm(true);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold">Menu Items ({items.length})</h3>
+        <Button onClick={() => { setShowForm(true); setEditingItem(null); setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', is_available: true }); }}>
+          <Plus size={20} /> Add Menu Item
+        </Button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white p-6 rounded-xl border-2 border-[#8D6E63]">
+          <h4 className="font-bold mb-4">{editingItem ? 'Edit' : 'Add'} Menu Item</h4>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input type="text" placeholder="Name" value={formData.name} onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))} className="w-full p-3 border rounded-lg" required />
+            <textarea placeholder="Description" value={formData.description} onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))} className="w-full p-3 border rounded-lg" rows={3} required />
+            <input type="number" placeholder="Price" value={formData.price} onChange={e => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) }))} className="w-full p-3 border rounded-lg" step="0.01" required />
+            <select value={formData.category} onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))} className="w-full p-3 border rounded-lg">
+              <option>Appetizers</option>
+              <option>Main Course</option>
+              <option>Desserts</option>
+              <option>Beverages</option>
+            </select>
+            <div>
+              <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full p-3 border rounded-lg" disabled={uploading} />
+              {formData.image_url && <img src={formData.image_url} alt="Preview" className="mt-2 h-32 object-cover rounded" />}
+            </div>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={formData.is_available} onChange={e => setFormData(prev => ({ ...prev, is_available: e.target.checked }))} />
+              Available
+            </label>
+            <div className="flex gap-2">
+              <Button type="submit" disabled={uploading}>{editingItem ? 'Update' : 'Add'}</Button>
+              <Button type="button" onClick={() => setShowForm(false)} className="bg-gray-500">Cancel</Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {items.map(item => (
+          <div key={item.id} className="bg-white p-4 rounded-xl border-2 border-gray-200 flex gap-4">
+            {item.image_url && <img src={item.image_url} alt={item.name} className="w-24 h-24 object-cover rounded" />}
+            <div className="flex-1">
+              <h4 className="font-bold">{item.name}</h4>
+              <p className="text-sm text-gray-600">{item.description}</p>
+              <p className="font-bold text-[#8D6E63]">GH₵{item.price}</p>
+              <p className="text-xs text-gray-500">{item.category} • {item.is_available ? 'Available' : 'Unavailable'}</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => handleEdit(item)} className="p-2 hover:bg-gray-100 rounded"><Edit size={16} /></button>
+              <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-100 text-red-600 rounded"><Trash2 size={16} /></button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 const GallerySection = () => {
   const [images, setImages] = useState<GalleryImage[]>([]);
-  useEffect(() => { galleryApi.getAll().then(setImages).catch(console.error); }, []);
-  return <div className="bg-white p-6 rounded-xl">Found {images.length} images</div>;
+  const [uploading, setUploading] = useState(false);
+  const [title, setTitle] = useState('');
+
+  const loadImages = () => galleryApi.getAll().then(setImages).catch(e => toast.error('Failed to load gallery'));
+  useEffect(() => { loadImages(); }, []);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !title) {
+      toast.error('Please enter a title');
+      return;
+    }
+    setUploading(true);
+    try {
+      await galleryApi.upload(file, title);
+      toast.success('Image uploaded');
+      setTitle('');
+      loadImages();
+    } catch (error) {
+      toast.error('Failed to upload image');
+    }
+    setUploading(false);
+  };
+
+  const handleDelete = async (id: string, storagePath: string) => {
+    if (!confirm('Delete this image?')) return;
+    try {
+      await galleryApi.delete(id, storagePath);
+      toast.success('Image deleted');
+      loadImages();
+    } catch (error) {
+      toast.error('Failed to delete');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-xl border-2 border-[#8D6E63]">
+        <h4 className="font-bold mb-4">Upload New Image</h4>
+        <input type="text" placeholder="Image title" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 border rounded-lg mb-4" />
+        <input type="file" accept="image/*" onChange={handleUpload} className="w-full p-3 border rounded-lg" disabled={uploading || !title} />
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {images.map(img => (
+          <div key={img.id} className="relative group">
+            <img src={img.url} alt={img.title} className="w-full h-48 object-cover rounded-xl" />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+              <button onClick={() => handleDelete(img.id, img.url.split('/').pop() || '')} className="p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                <Trash2 size={20} />
+              </button>
+            </div>
+            <p className="mt-2 text-sm font-medium">{img.title}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const AboutSection = () => {
+  const [content, setContent] = useState<AboutContent | null>(null);
+  const [formData, setFormData] = useState({ content: '', years_experience: 0, menu_items_count: 0 });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    aboutApi.get().then(data => {
+      if (data) {
+        setContent(data);
+        setFormData({ content: data.content, years_experience: data.years_experience, menu_items_count: data.menu_items_count });
+      }
+    }).catch(console.error);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await aboutApi.update(formData);
+      toast.success('About page updated');
+      const updated = await aboutApi.get();
+      if (updated) setContent(updated);
+    } catch (error) {
+      toast.error('Failed to update');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-xl">
+      <h3 className="text-xl font-bold mb-6">About Page Content</h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block font-medium mb-2">About Content</label>
+          <textarea value={formData.content} onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))} className="w-full p-3 border rounded-lg" rows={8} placeholder="Tell your restaurant's story..." required />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium mb-2">Years of Experience</label>
+            <input type="number" value={formData.years_experience} onChange={e => setFormData(prev => ({ ...prev, years_experience: parseInt(e.target.value) }))} className="w-full p-3 border rounded-lg" required />
+          </div>
+          <div>
+            <label className="block font-medium mb-2">Menu Items Count</label>
+            <input type="number" value={formData.menu_items_count} onChange={e => setFormData(prev => ({ ...prev, menu_items_count: parseInt(e.target.value) }))} className="w-full p-3 border rounded-lg" required />
+          </div>
+        </div>
+        <Button type="submit" disabled={loading}>Save Changes</Button>
+      </form>
+    </div>
+  );
 };
