@@ -170,22 +170,35 @@ const MessagesSection = () => {
 
     setSending(true);
     try {
-      // Create mailto link to open user's email client
-      const subject = encodeURIComponent(`Re: Your message to Ernemako Restaurant`);
-      const body = encodeURIComponent(replyMessage);
-      const mailtoLink = `mailto:${msg.email}?subject=${subject}&body=${body}`;
-      
-      // Open email client
-      window.location.href = mailtoLink;
-      
+      // Send email via API
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: msg.email,
+          subject: `Re: Your message to Ernemako Restaurant`,
+          message: replyMessage,
+          replyTo: 'hello@ernemakorestaurant.com',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send email');
+      }
+
       // Mark as replied
       await contactApi.updateStatus(msg.id, 'replied');
-      toast.success('Email client opened. Message marked as replied.');
+      toast.success('Email sent successfully!');
       setReplyingTo(null);
       setReplyMessage('');
       loadMessages();
-    } catch (error) {
-      toast.error('Failed to send reply');
+    } catch (error: any) {
+      console.error('Send reply error:', error);
+      toast.error(error.message || 'Failed to send reply');
     }
     setSending(false);
   };
@@ -239,7 +252,6 @@ const MessagesSection = () => {
                           Cancel
                         </Button>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">This will open your email client to send the reply</p>
                     </div>
                   )}
                 </div>
