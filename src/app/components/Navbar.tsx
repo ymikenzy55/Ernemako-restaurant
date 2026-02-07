@@ -341,7 +341,7 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="absolute right-0 top-0 bottom-0 w-[80%] max-w-sm bg-gradient-to-br from-[#3E2723] to-[#2C1810] shadow-2xl"
+            className="absolute right-0 top-0 bottom-0 w-[80%] max-w-sm bg-gradient-to-br from-[#3E2723] to-[#2C1810] shadow-2xl overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}

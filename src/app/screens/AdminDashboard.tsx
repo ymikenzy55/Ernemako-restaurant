@@ -798,13 +798,32 @@ const HeroBannerSection = () => {
     try {
       // Update hero_banner setting in settings table
       const { supabase } = await import('../../lib/supabase');
-      const { error } = await supabase
+      
+      // First check if the setting exists
+      const { data: existing } = await supabase
         .from('settings')
-        .update({ value: formData })
-        .eq('key', 'hero_banner');
+        .select('*')
+        .eq('key', 'hero_banner')
+        .maybeSingle();
+
+      let error;
+      if (existing) {
+        // Update existing
+        const result = await supabase
+          .from('settings')
+          .update({ value: formData, updated_at: new Date().toISOString() })
+          .eq('key', 'hero_banner');
+        error = result.error;
+      } else {
+        // Insert new
+        const result = await supabase
+          .from('settings')
+          .insert([{ key: 'hero_banner', value: formData }]);
+        error = result.error;
+      }
 
       if (error) throw error;
-      toast.success('Hero banner updated');
+      toast.success('Hero banner updated! Refresh the main page to see changes.');
       setHeroBanner(formData);
     } catch (error) {
       console.error('Update error:', error);

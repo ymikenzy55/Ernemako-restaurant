@@ -471,15 +471,21 @@ export const heroBannerApi = {
   async get(): Promise<HeroBanner | null> {
     const { data, error } = await supabase
       .from('settings')
-      .select('value')
+      .select('*')
       .eq('key', 'hero_banner')
-      .single();
+      .maybeSingle();
     
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Failed to load hero banner:', error);
       return null;
     }
-    return data?.value || null;
+    
+    if (!data) {
+      console.log('No hero banner found in database');
+      return null;
+    }
+    
+    return data.value || null;
   },
 
   // Update hero banner settings

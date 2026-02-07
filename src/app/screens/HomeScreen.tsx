@@ -57,26 +57,41 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
   
   // Load hero banner from database
   useEffect(() => {
-    heroBannerApi.get().then(banner => {
-      if (banner) {
-        setHeroBanner(banner);
-        // Preload custom hero image with cache busting
-        const img = new Image();
-        img.src = `${banner.image_url}?t=${Date.now()}`;
-        img.onload = () => setHeroImageLoaded(true);
-      } else {
+    const loadHeroBanner = async () => {
+      try {
+        const banner = await heroBannerApi.get();
+        console.log('Loaded hero banner:', banner);
+        
+        if (banner && banner.image_url) {
+          setHeroBanner(banner);
+          // Preload custom hero image with cache busting
+          const img = new Image();
+          img.src = `${banner.image_url}?t=${Date.now()}`;
+          img.onload = () => setHeroImageLoaded(true);
+          img.onerror = () => {
+            console.error('Failed to load custom hero image, using default');
+            setHeroBanner(null);
+            const defaultImg = new Image();
+            defaultImg.src = 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=60&auto=format&fit=crop';
+            defaultImg.onload = () => setHeroImageLoaded(true);
+          };
+        } else {
+          console.log('No custom banner, using default');
+          // Fallback to default image
+          const img = new Image();
+          img.src = 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=60&auto=format&fit=crop';
+          img.onload = () => setHeroImageLoaded(true);
+        }
+      } catch (error) {
+        console.error('Failed to load hero banner:', error);
         // Fallback to default image
         const img = new Image();
         img.src = 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=60&auto=format&fit=crop';
         img.onload = () => setHeroImageLoaded(true);
       }
-    }).catch(error => {
-      console.error('Failed to load hero banner:', error);
-      // Fallback to default image
-      const img = new Image();
-      img.src = 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=60&auto=format&fit=crop';
-      img.onload = () => setHeroImageLoaded(true);
-    });
+    };
+    
+    loadHeroBanner();
   }, []);
 
   useEffect(() => {
@@ -193,9 +208,7 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
                 }}
               >
                 <span className={`w-2 h-2 rounded-full ${isOpen ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></span>
-                <span className="text-sm font-medium text-white">{isOpen ? 'Open Now' : 'Closed'}</span>
-                <span className="text-white/60">•</span>
-                <span className="text-sm text-white/80">{openingMessage}</span>
+                <span className="text-sm font-medium text-white">{openingMessage}</span>
               </motion.div>
               
               <motion.h1 
