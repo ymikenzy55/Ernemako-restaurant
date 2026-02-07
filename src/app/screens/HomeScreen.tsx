@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { Button } from '../components/Button';
 import { ContactForm } from '../components/ContactForm';
+import { heroBannerApi, type HeroBanner } from '../../lib/adminApi';
 
 interface HomeScreenProps {
   onNavigate: (screen: ScreenType) => void;
@@ -52,12 +53,30 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [isOpen, setIsOpen] = useState(isRestaurantOpen());
   const [openingMessage, setOpeningMessage] = useState(getOpeningMessage());
+  const [heroBanner, setHeroBanner] = useState<HeroBanner | null>(null);
   
-  // Preload hero image
+  // Load hero banner from database
   useEffect(() => {
-    const img = new Image();
-    img.src = 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=60&auto=format&fit=crop';
-    img.onload = () => setHeroImageLoaded(true);
+    heroBannerApi.get().then(banner => {
+      if (banner) {
+        setHeroBanner(banner);
+        // Preload custom hero image
+        const img = new Image();
+        img.src = banner.image_url;
+        img.onload = () => setHeroImageLoaded(true);
+      } else {
+        // Fallback to default image
+        const img = new Image();
+        img.src = 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=60&auto=format&fit=crop';
+        img.onload = () => setHeroImageLoaded(true);
+      }
+    }).catch(error => {
+      console.error('Failed to load hero banner:', error);
+      // Fallback to default image
+      const img = new Image();
+      img.src = 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=60&auto=format&fit=crop';
+      img.onload = () => setHeroImageLoaded(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -140,7 +159,7 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
             className="w-full h-full"
           >
             <ImageWithFallback 
-              src="https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=60&auto=format&fit=crop"
+              src={heroBanner?.image_url || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=60&auto=format&fit=crop'}
               alt="Ernemako Restaurant Atmosphere"
               className={`w-full h-full object-cover transition-opacity duration-500 ${heroImageLoaded ? 'opacity-100' : 'opacity-0'}`}
               style={{ 
@@ -191,7 +210,7 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
                   transition={{ delay: 0.5, duration: 0.5 }}
                   className="block"
                 >
-                  Welcome to
+                  {heroBanner?.title || 'Welcome to'}
                 </motion.span>
                 <motion.span 
                   initial={{ opacity: 0, x: 20 }}
@@ -202,7 +221,7 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
                     textShadow: '0 0 40px rgba(215, 204, 200, 0.3)'
                   }}
                 >
-                  Ernemako Restaurant
+                  {!heroBanner?.title && 'Ernemako Restaurant'}
                 </motion.span>
               </motion.h1>
               
@@ -212,7 +231,7 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.9, duration: 0.6 }}
               >
-                Authentic Ghanaian cuisine crafted with tradition and passion
+                {heroBanner?.subtitle || 'Authentic Ghanaian cuisine crafted with tradition and passion'}
               </motion.p>
             </motion.div>
           </div>

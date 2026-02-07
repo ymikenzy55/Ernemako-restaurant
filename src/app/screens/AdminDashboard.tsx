@@ -55,26 +55,26 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-[#FDFBF7]">
-      <aside className="w-full md:w-64 bg-gradient-to-b from-[#3E2723] to-[#2C1810] text-white flex flex-col">
-        <div className="p-6 border-b border-white/10">
-          <h1 className="font-bold text-lg">ERNEMAKO</h1>
+      <aside className="w-full md:w-64 bg-gradient-to-b from-[#3E2723] to-[#2C1810] text-white flex flex-col md:h-screen">
+        <div className="p-4 md:p-6 border-b border-white/10">
+          <h1 className="font-bold text-base md:text-lg">ERNEMAKO</h1>
           <p className="text-xs text-[#D7CCC8]">Admin Panel</p>
         </div>
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-2 md:p-4 space-y-1 md:space-y-2 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg relative ${
+                className={`w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg relative text-sm md:text-base ${
                   activeSection === item.id ? 'bg-[#8D6E63]' : 'hover:bg-white/10'
                 }`}
               >
-                <Icon size={20} />
-                <span className="text-sm md:text-base">{item.label}</span>
+                <Icon size={18} className="md:w-5 md:h-5 flex-shrink-0" />
+                <span className="truncate">{item.label}</span>
                 {item.badge && item.badge > 0 && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                  <span className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center flex-shrink-0">
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}
@@ -82,20 +82,20 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-white/10">
-          <button onClick={async () => { await adminApi.logout(); onLogout(); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-500/20 text-red-400">
-            <LogOut size={20} />
+        <div className="p-2 md:p-4 border-t border-white/10">
+          <button onClick={async () => { await adminApi.logout(); onLogout(); }} className="w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-red-500/20 text-red-400 text-sm md:text-base">
+            <LogOut size={18} className="md:w-5 md:h-5" />
             <span>Logout</span>
           </button>
         </div>
       </aside>
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b px-4 md:px-8 py-4">
-          <h2 className="text-xl md:text-2xl font-bold text-[#3E2723]">
+        <header className="bg-white border-b px-4 md:px-8 py-3 md:py-4">
+          <h2 className="text-lg md:text-2xl font-bold text-[#3E2723]">
             {menuItems.find(i => i.id === activeSection)?.label}
           </h2>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-3 md:p-8">
           {activeSection === 'dashboard' && <DashboardSection />}
           {activeSection === 'messages' && <MessagesSection />}
           {activeSection === 'reservations' && <ReservationsSection />}
@@ -114,17 +114,17 @@ const DashboardSection = () => {
   const [stats, setStats] = useState({ totalReservations: 0, unreadMessages: 0, menuItemsCount: 0, galleryImagesCount: 0 });
   useEffect(() => { dashboardApi.getStats().then(setStats).catch(console.error); }, []);
   return (
-    <div className="grid grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
       {[
         { label: 'Reservations', value: stats.totalReservations, color: 'bg-blue-500' },
         { label: 'Messages', value: stats.unreadMessages, color: 'bg-orange-500' },
         { label: 'Menu Items', value: stats.menuItemsCount, color: 'bg-green-500' },
         { label: 'Gallery', value: stats.galleryImagesCount, color: 'bg-purple-500' },
       ].map(stat => (
-        <div key={stat.label} className="bg-white rounded-xl p-6 border-2 border-[#D7CCC8]">
-          <div className={`w-12 h-12 rounded-lg ${stat.color} mb-4`} />
-          <h3 className="text-3xl font-bold">{stat.value}</h3>
-          <p className="text-sm text-gray-600">{stat.label}</p>
+        <div key={stat.label} className="bg-white rounded-xl p-4 md:p-6 border-2 border-[#D7CCC8]">
+          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg ${stat.color} mb-3 md:mb-4`} />
+          <h3 className="text-2xl md:text-3xl font-bold">{stat.value}</h3>
+          <p className="text-xs md:text-sm text-gray-600">{stat.label}</p>
         </div>
       ))}
     </div>
@@ -206,10 +206,10 @@ const MessagesSection = () => {
   const filteredMessages = filter === 'all' ? messages : messages.filter(m => m.status === filter);
 
   return (
-    <div className="space-y-6">
-      <div className="flex gap-2">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-wrap gap-2">
         {['all', 'unread', 'read'].map(f => (
-          <button key={f} onClick={() => setFilter(f as any)} className={`px-4 py-2 rounded-lg font-medium ${filter === f ? 'bg-[#8D6E63] text-white' : 'bg-white border'}`}>
+          <button key={f} onClick={() => setFilter(f as any)} className={`px-3 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base ${filter === f ? 'bg-[#8D6E63] text-white' : 'bg-white border'}`}>
             {f.charAt(0).toUpperCase() + f.slice(1)} ({f === 'all' ? messages.length : messages.filter(m => m.status === f).length})
           </button>
         ))}
@@ -220,56 +220,56 @@ const MessagesSection = () => {
           No {filter !== 'all' ? filter : ''} messages found
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {filteredMessages.map(msg => (
-            <div key={msg.id} className={`bg-white p-6 rounded-xl border-2 ${msg.status === 'unread' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h4 className="font-bold text-lg">{msg.name}</h4>
-                    {msg.status === 'unread' && <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded-full flex items-center gap-1"><Bell size={12} /> NEW</span>}
+            <div key={msg.id} className={`bg-white p-4 md:p-6 rounded-xl border-2 ${msg.status === 'unread' ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 md:gap-3 mb-2 flex-wrap">
+                    <h4 className="font-bold text-base md:text-lg truncate">{msg.name}</h4>
+                    {msg.status === 'unread' && <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded-full flex items-center gap-1 flex-shrink-0"><Bell size={12} /> NEW</span>}
                   </div>
-                  <p className="text-sm text-gray-600 mb-1">{msg.email} {msg.phone && `• ${msg.phone}`}</p>
-                  <p className="mt-3 text-gray-800">{msg.message}</p>
+                  <p className="text-xs md:text-sm text-gray-600 mb-1 break-all">{msg.email} {msg.phone && `• ${msg.phone}`}</p>
+                  <p className="mt-2 md:mt-3 text-sm md:text-base text-gray-800 break-words">{msg.message}</p>
                   <p className="text-xs text-gray-400 mt-2">{new Date(msg.created_at).toLocaleString()}</p>
                   
                   {/* Reply Form */}
                   {replyingTo === msg.id && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="mt-4 p-3 md:p-4 bg-gray-50 rounded-lg">
                       <label className="block text-sm font-medium mb-2">Reply to {msg.name}</label>
                       <textarea
                         value={replyMessage}
                         onChange={e => setReplyMessage(e.target.value)}
-                        className="w-full p-3 border rounded-lg mb-3"
+                        className="w-full p-2 md:p-3 border rounded-lg mb-3 text-sm md:text-base"
                         rows={4}
                         placeholder="Type your reply here..."
                       />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleSendReply(msg)} disabled={sending}>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button size="sm" onClick={() => handleSendReply(msg)} disabled={sending} className="w-full sm:w-auto">
                           <Send size={16} /> {sending ? 'Sending...' : 'Send Reply'}
                         </Button>
-                        <Button size="sm" onClick={() => { setReplyingTo(null); setReplyMessage(''); }} className="bg-gray-500">
+                        <Button size="sm" onClick={() => { setReplyingTo(null); setReplyMessage(''); }} className="bg-gray-500 w-full sm:w-auto">
                           Cancel
                         </Button>
                       </div>
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col gap-2 ml-4">
+                <div className="flex md:flex-col gap-2 ml-0 md:ml-4 flex-wrap md:flex-nowrap">
                   {msg.status === 'unread' && (
-                    <Button size="sm" onClick={() => handleStatusUpdate(msg.id, 'read')} className="bg-blue-500">
-                      <Check size={16} /> Mark Read
+                    <Button size="sm" onClick={() => handleStatusUpdate(msg.id, 'read')} className="bg-blue-500 flex-1 md:flex-none">
+                      <Check size={16} /> <span className="hidden sm:inline">Mark Read</span><span className="sm:hidden">Read</span>
                     </Button>
                   )}
                   {msg.status !== 'replied' && (
-                    <Button size="sm" onClick={() => setReplyingTo(msg.id)} className="bg-green-500">
+                    <Button size="sm" onClick={() => setReplyingTo(msg.id)} className="bg-green-500 flex-1 md:flex-none">
                       <Send size={16} /> Reply
                     </Button>
                   )}
                   {msg.status === 'replied' && (
-                    <span className="text-xs text-green-600 font-medium">✓ Replied</span>
+                    <span className="text-xs text-green-600 font-medium whitespace-nowrap">✓ Replied</span>
                   )}
-                  <button onClick={() => handleDelete(msg.id)} className="p-2 hover:bg-red-100 text-red-600 rounded">
+                  <button onClick={() => handleDelete(msg.id)} className="p-2 hover:bg-red-100 text-red-600 rounded flex-shrink-0">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -323,10 +323,10 @@ const ReservationsSection = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex gap-2">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-wrap gap-2">
         {['all', 'pending', 'confirmed', 'completed'].map(f => (
-          <button key={f} onClick={() => setFilter(f as any)} className={`px-4 py-2 rounded-lg font-medium ${filter === f ? 'bg-[#8D6E63] text-white' : 'bg-white border'}`}>
+          <button key={f} onClick={() => setFilter(f as any)} className={`px-3 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base ${filter === f ? 'bg-[#8D6E63] text-white' : 'bg-white border'}`}>
             {f.charAt(0).toUpperCase() + f.slice(1)} ({f === 'all' ? reservations.length : reservations.filter(r => r.status === f).length})
           </button>
         ))}
@@ -337,41 +337,41 @@ const ReservationsSection = () => {
           No {filter !== 'all' ? filter : ''} reservations found
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {filteredReservations.map(res => (
-            <div key={res.id} className={`bg-white p-6 rounded-xl border-2 ${getStatusColor(res.status)}`}>
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h4 className="font-bold text-lg">{res.customer_name}</h4>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(res.status)}`}>
+            <div key={res.id} className={`bg-white p-4 md:p-6 rounded-xl border-2 ${getStatusColor(res.status)}`}>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 md:gap-3 mb-2 flex-wrap">
+                    <h4 className="font-bold text-base md:text-lg truncate">{res.customer_name}</h4>
+                    <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(res.status)} flex-shrink-0`}>
                       {res.status.toUpperCase()}
                     </span>
                   </div>
-                  <div className="space-y-1 text-sm">
-                    <p><Calendar size={16} className="inline mr-2" />{res.date} at {res.time}</p>
-                    <p><UtensilsCrossed size={16} className="inline mr-2" />{res.guests} guests</p>
-                    <p><MessageSquare size={16} className="inline mr-2" />{res.phone}</p>
-                    {res.special_requests && <p className="text-gray-600 italic">Note: {res.special_requests}</p>}
+                  <div className="space-y-1 text-xs md:text-sm">
+                    <p><Calendar size={14} className="md:w-4 md:h-4 inline mr-2" />{res.date} at {res.time}</p>
+                    <p><UtensilsCrossed size={14} className="md:w-4 md:h-4 inline mr-2" />{res.guests} guests</p>
+                    <p className="break-all"><MessageSquare size={14} className="md:w-4 md:h-4 inline mr-2" />{res.phone}</p>
+                    {res.special_requests && <p className="text-gray-600 italic break-words">Note: {res.special_requests}</p>}
                   </div>
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex md:flex-col gap-2 flex-wrap md:flex-nowrap">
                   {res.status === 'pending' && (
                     <>
-                      <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'confirmed')} className="bg-blue-500">
-                        <Check size={16} /> Confirm
+                      <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'confirmed')} className="bg-blue-500 flex-1 md:flex-none">
+                        <Check size={16} /> <span className="hidden sm:inline">Confirm</span>
                       </Button>
-                      <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'cancelled')} className="bg-red-500">
-                        <X size={16} /> Cancel
+                      <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'cancelled')} className="bg-red-500 flex-1 md:flex-none">
+                        <X size={16} /> <span className="hidden sm:inline">Cancel</span>
                       </Button>
                     </>
                   )}
                   {res.status === 'confirmed' && (
-                    <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'completed')} className="bg-green-500">
+                    <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'completed')} className="bg-green-500 w-full md:w-auto">
                       <Check size={16} /> Complete
                     </Button>
                   )}
-                  <button onClick={() => handleDelete(res.id)} className="p-2 hover:bg-red-100 text-red-600 rounded text-sm">
+                  <button onClick={() => handleDelete(res.id)} className="p-2 hover:bg-red-100 text-red-600 rounded text-sm flex-shrink-0">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -456,11 +456,11 @@ const MenuSection = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-bold">Menu Items ({items.length})</h3>
-        <Button onClick={() => { setShowForm(true); setEditingItem(null); setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active', featured: false }); }}>
-          <Plus size={20} /> Add Menu Item
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <h3 className="text-lg md:text-xl font-bold">Menu Items ({items.length})</h3>
+        <Button onClick={() => { setShowForm(true); setEditingItem(null); setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active', featured: false }); }} className="w-full sm:w-auto">
+          <Plus size={18} className="md:w-5 md:h-5" /> Add Menu Item
         </Button>
       </div>
 
@@ -579,27 +579,27 @@ const GallerySection = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border-2 border-[#8D6E63]">
-        <h4 className="font-bold mb-4">Upload New Image</h4>
-        <div className="space-y-4">
+    <div className="space-y-4 md:space-y-6">
+      <div className="bg-white p-4 md:p-6 rounded-xl border-2 border-[#8D6E63]">
+        <h4 className="font-bold mb-4 text-base md:text-lg">Upload New Image</h4>
+        <div className="space-y-3 md:space-y-4">
           <input 
             type="text" 
             placeholder="Image title" 
             value={title} 
             onChange={e => setTitle(e.target.value)} 
-            className="w-full p-3 border rounded-lg" 
+            className="w-full p-2 md:p-3 border rounded-lg text-sm md:text-base" 
           />
           <input 
             id="gallery-file-input"
             type="file" 
             accept="image/*" 
             onChange={handleFileSelect} 
-            className="w-full p-3 border rounded-lg" 
+            className="w-full p-2 md:p-3 border rounded-lg text-sm md:text-base" 
             disabled={uploading} 
           />
           {selectedFile && (
-            <p className="text-sm text-gray-600">Selected: {selectedFile.name}</p>
+            <p className="text-xs md:text-sm text-gray-600 break-all">Selected: {selectedFile.name}</p>
           )}
           <Button 
             onClick={handleUpload} 
@@ -611,16 +611,16 @@ const GallerySection = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         {images.map(img => (
           <div key={img.id} className="relative group">
-            <img src={img.image_url} alt={img.title} className="w-full h-48 object-cover rounded-xl" />
+            <img src={img.image_url} alt={img.title} className="w-full h-32 md:h-48 object-cover rounded-xl" />
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-              <button onClick={() => handleDelete(img.id, img.storage_path || '')} className="p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
-                <Trash2 size={20} />
+              <button onClick={() => handleDelete(img.id, img.storage_path || '')} className="p-2 md:p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                <Trash2 size={18} className="md:w-5 md:h-5" />
               </button>
             </div>
-            <p className="mt-2 text-sm font-medium">{img.title}</p>
+            <p className="mt-2 text-xs md:text-sm font-medium truncate">{img.title}</p>
           </div>
         ))}
       </div>
@@ -816,6 +816,18 @@ const SettingsSection = () => {
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [creatingAdmin, setCreatingAdmin] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    adminApi.getCurrentUser().then(user => {
+      if (user?.email) {
+        setCurrentUserEmail(user.email);
+        // Check if this is the super admin (first admin created)
+        setIsSuperAdmin(user.email === 'yeboahmichael977@gmail.com');
+      }
+    });
+  }, []);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -846,6 +858,11 @@ const SettingsSection = () => {
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isSuperAdmin) {
+      toast.error('Only the super admin can create new admins');
+      return;
+    }
+
     if (newAdminPassword.length < 6) {
       toast.error('Password must be at least 6 characters');
       return;
@@ -854,7 +871,7 @@ const SettingsSection = () => {
     setCreatingAdmin(true);
     try {
       await adminApi.createAdmin(newAdminEmail, newAdminPassword);
-      toast.success('Admin user created successfully');
+      toast.success('Admin user created successfully. They can log in immediately.');
       setNewAdminEmail('');
       setNewAdminPassword('');
     } catch (error: any) {
@@ -876,7 +893,7 @@ const SettingsSection = () => {
           onClick={() => setActiveTab('admins')}
           className={`px-6 py-3 font-medium ${activeTab === 'admins' ? 'border-b-2 border-[#8D6E63] text-[#8D6E63]' : 'text-gray-600'}`}
         >
-          Manage Admins
+          Manage Admins {!isSuperAdmin && '🔒'}
         </button>
       </div>
 
@@ -916,40 +933,67 @@ const SettingsSection = () => {
       )}
 
       {activeTab === 'admins' && (
-        <div className="bg-white p-6 rounded-xl max-w-md">
-          <h3 className="text-xl font-bold mb-6">Create New Admin</h3>
-          <form onSubmit={handleCreateAdmin} className="space-y-4">
-            <div>
-              <label className="block font-medium mb-2">Email Address</label>
-              <input
-                type="email"
-                value={newAdminEmail}
-                onChange={e => setNewAdminEmail(e.target.value)}
-                className="w-full p-3 border rounded-lg"
-                placeholder="admin@example.com"
-                required
-              />
+        <div className="space-y-6">
+          {!isSuperAdmin && (
+            <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
+              <p className="text-yellow-800 font-medium">
+                🔒 Only the super admin (yeboahmichael977@gmail.com) can manage admin accounts.
+              </p>
             </div>
-            <div>
-              <label className="block font-medium mb-2">Password</label>
-              <input
-                type="password"
-                value={newAdminPassword}
-                onChange={e => setNewAdminPassword(e.target.value)}
-                className="w-full p-3 border rounded-lg"
-                placeholder="Minimum 6 characters"
-                required
-                minLength={6}
-              />
+          )}
+
+          {isSuperAdmin && (
+            <div className="bg-white p-6 rounded-xl max-w-md">
+              <h3 className="text-xl font-bold mb-6">Create New Admin</h3>
+              <form onSubmit={handleCreateAdmin} className="space-y-4">
+                <div>
+                  <label className="block font-medium mb-2">Email Address</label>
+                  <input
+                    type="email"
+                    value={newAdminEmail}
+                    onChange={e => setNewAdminEmail(e.target.value)}
+                    className="w-full p-3 border rounded-lg"
+                    placeholder="admin@example.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium mb-2">Password</label>
+                  <input
+                    type="password"
+                    value={newAdminPassword}
+                    onChange={e => setNewAdminPassword(e.target.value)}
+                    className="w-full p-3 border rounded-lg"
+                    placeholder="Minimum 6 characters"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <Button type="submit" disabled={creatingAdmin} fullWidth>
+                  {creatingAdmin ? 'Creating...' : 'Create Admin'}
+                </Button>
+              </form>
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> New admins can log in immediately. If they see "Email not confirmed", go to Supabase Dashboard → Authentication → Settings → Email Auth and disable "Enable email confirmations".
+                </p>
+              </div>
             </div>
-            <Button type="submit" disabled={creatingAdmin} fullWidth>
-              {creatingAdmin ? 'Creating...' : 'Create Admin'}
-            </Button>
-          </form>
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> The new admin will receive a confirmation email and can log in immediately with the provided credentials.
-            </p>
+          )}
+
+          <div className="bg-white p-6 rounded-xl">
+            <h3 className="text-xl font-bold mb-4">Current Admin</h3>
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+              <div className="w-10 h-10 rounded-full bg-[#8D6E63] text-white flex items-center justify-center font-bold">
+                {currentUserEmail.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-medium">{currentUserEmail}</p>
+                <p className="text-sm text-gray-600">
+                  {isSuperAdmin ? '👑 Super Admin' : 'Admin'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}

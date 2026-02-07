@@ -434,6 +434,9 @@ export const adminApi = {
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: undefined, // Disable email confirmation
+      }
     });
     if (error) throw error;
   },
@@ -441,6 +444,43 @@ export const adminApi = {
   // Logout
   async logout(): Promise<void> {
     const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  }
+};
+
+// ============================================
+// HERO BANNER OPERATIONS
+// ============================================
+
+export interface HeroBanner {
+  image_url: string;
+  title: string;
+  subtitle: string;
+}
+
+export const heroBannerApi = {
+  // Get hero banner settings
+  async get(): Promise<HeroBanner | null> {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'hero_banner')
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      console.error('Failed to load hero banner:', error);
+      return null;
+    }
+    return data?.value || null;
+  },
+
+  // Update hero banner settings
+  async update(banner: HeroBanner): Promise<void> {
+    const { error } = await supabase
+      .from('settings')
+      .update({ value: banner })
+      .eq('key', 'hero_banner');
+
     if (error) throw error;
   }
 };
