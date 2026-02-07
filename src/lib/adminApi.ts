@@ -421,12 +421,31 @@ export const settingsApi = {
 // ADMIN USER OPERATIONS
 // ============================================
 
+export interface Admin {
+  id: string;
+  user_id: string;
+  email: string;
+  role: 'super_admin' | 'admin';
+  created_at: string;
+}
+
 export const adminApi = {
   // Get current admin user
   async getCurrentUser() {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error) throw error;
     return user;
+  },
+
+  // Get all admins (from custom admins table)
+  async getAllAdmins(): Promise<Admin[]> {
+    const { data, error } = await supabase
+      .from('admins')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
   },
 
   // Update admin password
@@ -439,14 +458,44 @@ export const adminApi = {
 
   // Create new admin user (requires admin privileges)
   async createAdmin(email: string, password: string): Promise<void> {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: undefined, // Disable email confirmation
       }
     });
+    
     if (error) throw error;
+    
+    // Add to admins table
+    if (data.user) {
+      const { error: insertError } = await supabase
+        .from('admins')
+        .insert([{
+          user_id: data.user.id,
+          email: email,
+          role: 'admin'
+        }]);
+      
+      if (insertError) {
+        console.error('Failed to add admin to admins table:', insertError);
+      }
+    }
+  },
+
+  // Delete admin user
+  async deleteAdmin(userId: string, email: string): Promise<void> {
+    // Remove from admins table
+    const { error } = await supabase
+      .from('admins')
+      .delete()
+      .eq('user_id', userId);
+    
+    if (error) throw error;
+    
+    // Note: Cannot delete from auth.users without service role key
+    // User will remain in auth but won't be in admins table
   },
 
   // Logout

@@ -902,6 +902,9 @@ const SettingsSection = () => {
   const [creatingAdmin, setCreatingAdmin] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState('');
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [admins, setAdmins] = useState<any[]>([]);
+  const [loadingAdmins, setLoadingAdmins] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; admin: any | null }>({ isOpen: false, admin: null });
 
   useEffect(() => {
     adminApi.getCurrentUser().then(user => {
@@ -911,7 +914,20 @@ const SettingsSection = () => {
         setIsSuperAdmin(user.email === 'yeboahmichael977@gmail.com');
       }
     });
+    loadAdmins();
   }, []);
+
+  const loadAdmins = async () => {
+    setLoadingAdmins(true);
+    try {
+      const adminsList = await adminApi.getAllAdmins();
+      setAdmins(adminsList);
+    } catch (error) {
+      console.error('Failed to load admins:', error);
+      toast.error('Failed to load admin list');
+    }
+    setLoadingAdmins(false);
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -958,10 +974,23 @@ const SettingsSection = () => {
       toast.success('Admin user created successfully. They can log in immediately.');
       setNewAdminEmail('');
       setNewAdminPassword('');
+      loadAdmins(); // Refresh admin list
     } catch (error: any) {
       toast.error(error.message || 'Failed to create admin');
     }
     setCreatingAdmin(false);
+  };
+
+  const handleDeleteAdmin = async () => {
+    if (!deleteConfirm.admin) return;
+    
+    try {
+      await adminApi.deleteAdmin(deleteConfirm.admin.user_id, deleteConfirm.admin.email);
+      toast.success('Admin removed successfully');
+      loadAdmins();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to remove admin');
+    }
   };
 
   return (
@@ -1018,6 +1047,16 @@ const SettingsSection = () => {
 
       {activeTab === 'admins' && (
         <div className="space-y-6">
+          <ConfirmDialog
+            isOpen={deleteConfirm.isOpen}
+            onClose={() => setDeleteConfirm({ isOpen: false, admin: null })}
+            onConfirm={handleDeleteAdmin}
+            title="Remove Admin"
+            message={`Are you sure you want to remove ${deleteConfirm.admin?.email} from admin access? They will no longer be able to access the admin panel.`}
+            confirmText="Remove"
+            variant="danger"
+          />
+          
           {!isSuperAdmin && (
             <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
               <p className="text-yellow-800 font-medium">
@@ -1059,25 +1098,52 @@ const SettingsSection = () => {
               </form>
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <strong>Note:</strong> New admins can log in immediately. If they see "Email not confirmed", go to Supabase Dashboard → Authentication → Settings → Email Auth and disable "Enable email confirmations".
+                  <strong>Note:</strong> New admins need to be manually confirmed. After creating, go to Supabase → SQL Editor and run:
+                  <code className="block mt-2 p-2 bg-white rounded text-xs">
+                    UPDATE auth.users SET email_confirmed_at = NOW() WHERE email = 'new-admin@example.com';
+                  </code>
                 </p>
               </div>
             </div>
           )}
 
           <div className="bg-white p-6 rounded-xl">
-            <h3 className="text-xl font-bold mb-4">Current Admin</h3>
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-              <div className="w-10 h-10 rounded-full bg-[#8D6E63] text-white flex items-center justify-center font-bold">
-                {currentUserEmail.charAt(0).toUpperCase()}
+            <h3 className="text-xl font-bold mb-4">Admin Users</h3>
+            {loadingAdmins ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8D6E63]"></div>
               </div>
-              <div>
-                <p className="font-medium">{currentUserEmail}</p>
-                <p className="text-sm text-gray-600">
-                  {isSuperAdmin ? '👑 Super Admin' : 'Admin'}
-                </p>
+            ) : admins.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No admins found</p>
+            ) : (
+              <div className="space-y-3">
+                {admins.map(admin => (
+                  <div key={admin.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#8D6E63] text-white flex items-center justify-center font-bold">
+                        {admin.email.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium">{admin.email}</p>
+                        <p className="text-sm text-gray-600">
+                          {admin.role === 'super_admin' ? '👑 Super Admin' : 'Admin'}
+                          {admin.email === currentUserEmail && ' (You)'}
+                        </p>
+                      </div>
+                    </div>
+                    {isSuperAdmin && admin.role !== 'super_admin' && admin.email !== currentUserEmail && (
+                      <button
+                        onClick={() => setDeleteConfirm({ isOpen: true, admin })}
+                        className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                        title="Remove admin"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
