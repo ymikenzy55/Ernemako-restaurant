@@ -272,7 +272,7 @@ export const contactApi = {
   async create(message: Omit<ContactMessage, 'id' | 'created_at' | 'status'>): Promise<ContactMessage> {
     const { data, error } = await supabase
       .from('contact_messages')
-      .insert([{ ...message, status: 'unread' }])
+      .insert([message]) // Let database set default status
       .select()
       .single();
 
