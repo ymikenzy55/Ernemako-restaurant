@@ -253,6 +253,8 @@ export interface ContactMessage {
   phone?: string;
   message: string;
   status: 'unread' | 'read' | 'replied';
+  reply_message?: string;
+  reply_sent_at?: string;
   created_at: string;
 }
 
@@ -280,11 +282,17 @@ export const contactApi = {
     return data;
   },
 
-  // Update message status
-  async updateStatus(id: string, status: ContactMessage['status']): Promise<ContactMessage> {
+  // Update message status and optionally add reply
+  async updateStatus(id: string, status: ContactMessage['status'], replyMessage?: string): Promise<ContactMessage> {
+    const updateData: any = { status };
+    if (replyMessage) {
+      updateData.reply_message = replyMessage;
+      updateData.reply_sent_at = new Date().toISOString();
+    }
+    
     const { data, error } = await supabase
       .from('contact_messages')
-      .update({ status })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

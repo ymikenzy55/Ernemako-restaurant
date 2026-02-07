@@ -9,6 +9,7 @@ import {
   type GalleryImage, type MenuItem, type Reservation, type ContactMessage, type AboutContent
 } from '../../lib/adminApi';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'reservations' | 'messages' | 'about' | 'hero' | 'settings';
 
@@ -137,6 +138,7 @@ const MessagesSection = () => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   const loadMessages = () => contactApi.getAll().then(setMessages).catch(e => toast.error('Failed to load messages'));
   useEffect(() => { loadMessages(); }, []);
@@ -151,10 +153,10 @@ const MessagesSection = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this message?')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm.id) return;
     try {
-      await contactApi.delete(id);
+      await contactApi.delete(deleteConfirm.id);
       toast.success('Message deleted');
       loadMessages();
     } catch (error) {
@@ -190,12 +192,21 @@ const MessagesSection = () => {
         throw new Error(data.error || 'Failed to send email');
       }
 
-      // Mark as replied
-      await contactApi.updateStatus(msg.id, 'replied');
+      // Mark as replied and save the reply message to database
+      await contactApi.updateStatus(msg.id, 'replied', replyMessage);
+      
+      // Update local state to show the reply immediately
+      setMessages(prevMessages => 
+        prevMessages.map(m => 
+          m.id === msg.id 
+            ? { ...m, status: 'replied' as const, reply_message: replyMessage, reply_sent_at: new Date().toISOString() }
+            : m
+        )
+      );
+      
       toast.success('Email sent successfully!');
       setReplyingTo(null);
       setReplyMessage('');
-      loadMessages();
     } catch (error: any) {
       console.error('Send reply error:', error);
       toast.error(error.message || 'Failed to send reply');
@@ -207,6 +218,16 @@ const MessagesSection = () => {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={handleDelete}
+        title="Delete Message"
+        message="Are you sure you want to delete this message? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+      />
+      
       <div className="flex flex-wrap gap-2">
         {['all', 'unread', 'read'].map(f => (
           <button key={f} onClick={() => setFilter(f as any)} className={`px-3 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base ${filter === f ? 'bg-[#8D6E63] text-white' : 'bg-white border'}`}>
@@ -232,6 +253,17 @@ const MessagesSection = () => {
                   <p className="text-xs md:text-sm text-gray-600 mb-1 break-all">{msg.email} {msg.phone && `• ${msg.phone}`}</p>
                   <p className="mt-2 md:mt-3 text-sm md:text-base text-gray-800 break-words">{msg.message}</p>
                   <p className="text-xs text-gray-400 mt-2">{new Date(msg.created_at).toLocaleString()}</p>
+                  
+                  {/* Show sent reply */}
+                  {msg.status === 'replied' && msg.reply_message && (
+                    <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-500 rounded">
+                      <p className="text-xs font-medium text-green-800 mb-1">Your Reply:</p>
+                      <p className="text-sm text-gray-700">{msg.reply_message}</p>
+                      {msg.reply_sent_at && (
+                        <p className="text-xs text-gray-500 mt-1">Sent: {new Date(msg.reply_sent_at).toLocaleString()}</p>
+                      )}
+                    </div>
+                  )}
                   
                   {/* Reply Form */}
                   {replyingTo === msg.id && (
@@ -269,7 +301,7 @@ const MessagesSection = () => {
                   {msg.status === 'replied' && (
                     <span className="text-xs text-green-600 font-medium whitespace-nowrap">✓ Replied</span>
                   )}
-                  <button onClick={() => handleDelete(msg.id)} className="p-2 hover:bg-red-100 text-red-600 rounded flex-shrink-0">
+                  <button onClick={() => setDeleteConfirm({ isOpen: true, id: msg.id })} className="p-2 hover:bg-red-100 text-red-600 rounded flex-shrink-0">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -285,6 +317,7 @@ const MessagesSection = () => {
 const ReservationsSection = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   const loadReservations = () => reservationApi.getAll().then(setReservations).catch(e => toast.error('Failed to load reservations'));
   useEffect(() => { loadReservations(); }, []);
@@ -299,10 +332,10 @@ const ReservationsSection = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this reservation?')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm.id) return;
     try {
-      await reservationApi.delete(id);
+      await reservationApi.delete(deleteConfirm.id);
       toast.success('Reservation deleted');
       loadReservations();
     } catch (error) {
@@ -324,6 +357,16 @@ const ReservationsSection = () => {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={handleDelete}
+        title="Delete Reservation"
+        message="Are you sure you want to delete this reservation? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+      />
+      
       <div className="flex flex-wrap gap-2">
         {['all', 'pending', 'confirmed', 'completed'].map(f => (
           <button key={f} onClick={() => setFilter(f as any)} className={`px-3 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base ${filter === f ? 'bg-[#8D6E63] text-white' : 'bg-white border'}`}>
@@ -371,7 +414,7 @@ const ReservationsSection = () => {
                       <Check size={16} /> Complete
                     </Button>
                   )}
-                  <button onClick={() => handleDelete(res.id)} className="p-2 hover:bg-red-100 text-red-600 rounded text-sm flex-shrink-0">
+                  <button onClick={() => setDeleteConfirm({ isOpen: true, id: res.id })} className="p-2 hover:bg-red-100 text-red-600 rounded text-sm flex-shrink-0">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -390,6 +433,7 @@ const MenuSection = () => {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active', featured: false });
   const [uploading, setUploading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   const loadItems = () => menuApi.getAll().then(setItems).catch(e => toast.error('Failed to load menu items'));
   useEffect(() => { loadItems(); }, []);
@@ -428,10 +472,10 @@ const MenuSection = () => {
     setUploading(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this menu item?')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm.id) return;
     try {
-      await menuApi.delete(id);
+      await menuApi.delete(deleteConfirm.id);
       toast.success('Menu item deleted');
       loadItems();
     } catch (error) {
@@ -457,6 +501,16 @@ const MenuSection = () => {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={handleDelete}
+        title="Delete Menu Item"
+        message="Are you sure you want to delete this menu item? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+      />
+      
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h3 className="text-lg md:text-xl font-bold">Menu Items ({items.length})</h3>
         <Button onClick={() => { setShowForm(true); setEditingItem(null); setFormData({ name: '', description: '', price: 0, category: 'Appetizers', image_url: '', status: 'active', featured: false }); }} className="w-full sm:w-auto">
@@ -519,7 +573,7 @@ const MenuSection = () => {
                 <span className={item.featured ? 'text-yellow-500' : 'text-gray-400'}>⭐</span>
               </button>
               <button onClick={() => handleEdit(item)} className="p-2 hover:bg-gray-100 rounded"><Edit size={16} /></button>
-              <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-100 text-red-600 rounded"><Trash2 size={16} /></button>
+              <button onClick={() => setDeleteConfirm({ isOpen: true, id: item.id })} className="p-2 hover:bg-red-100 text-red-600 rounded"><Trash2 size={16} /></button>
             </div>
           </div>
         ))}
@@ -533,6 +587,7 @@ const GallerySection = () => {
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null; path: string | null }>({ isOpen: false, id: null, path: null });
 
   const loadImages = () => galleryApi.getAll().then(setImages).catch(e => toast.error('Failed to load gallery'));
   useEffect(() => { loadImages(); }, []);
@@ -566,10 +621,10 @@ const GallerySection = () => {
     setUploading(false);
   };
 
-  const handleDelete = async (id: string, storagePath: string) => {
-    if (!confirm('Delete this image?')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm.id || !deleteConfirm.path) return;
     try {
-      await galleryApi.delete(id, storagePath);
+      await galleryApi.delete(deleteConfirm.id, deleteConfirm.path);
       toast.success('Image deleted');
       loadImages();
     } catch (error) {
@@ -580,6 +635,16 @@ const GallerySection = () => {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null, path: null })}
+        onConfirm={handleDelete}
+        title="Delete Image"
+        message="Are you sure you want to delete this image? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+      />
+      
       <div className="bg-white p-4 md:p-6 rounded-xl border-2 border-[#8D6E63]">
         <h4 className="font-bold mb-4 text-base md:text-lg">Upload New Image</h4>
         <div className="space-y-3 md:space-y-4">
@@ -616,7 +681,7 @@ const GallerySection = () => {
           <div key={img.id} className="relative group">
             <img src={img.image_url} alt={img.title} className="w-full h-32 md:h-48 object-cover rounded-xl" />
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-              <button onClick={() => handleDelete(img.id, img.storage_path || '')} className="p-2 md:p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
+              <button onClick={() => setDeleteConfirm({ isOpen: true, id: img.id, path: img.storage_path || '' })} className="p-2 md:p-3 bg-red-500 text-white rounded-lg hover:bg-red-600">
                 <Trash2 size={18} className="md:w-5 md:h-5" />
               </button>
             </div>

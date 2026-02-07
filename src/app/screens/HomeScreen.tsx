@@ -60,9 +60,9 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
     heroBannerApi.get().then(banner => {
       if (banner) {
         setHeroBanner(banner);
-        // Preload custom hero image
+        // Preload custom hero image with cache busting
         const img = new Image();
-        img.src = banner.image_url;
+        img.src = `${banner.image_url}?t=${Date.now()}`;
         img.onload = () => setHeroImageLoaded(true);
       } else {
         // Fallback to default image
