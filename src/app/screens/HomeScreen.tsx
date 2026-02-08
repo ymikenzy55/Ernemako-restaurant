@@ -389,6 +389,33 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
 
 // About Section Component
 const AboutSection = () => {
+  const [aboutContent, setAboutContent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    import('../../lib/adminApi').then(({ aboutApi }) => {
+      aboutApi.get()
+        .then(content => {
+          setAboutContent(content);
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error('Failed to load about content:', error);
+          setLoading(false);
+        });
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="relative z-20 px-4 py-16 md:py-24 bg-white">
+        <div className="max-w-7xl mx-auto flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8D6E63]"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative z-20 px-4 py-16 md:py-24 bg-white">
       <div className="max-w-7xl mx-auto">
@@ -418,19 +445,27 @@ const AboutSection = () => {
             viewport={{ once: true }}
           >
             <h3 className="text-2xl font-bold text-[#3E2723] mb-4">Authentic Ghanaian Hospitality</h3>
-            <p className="text-[#5D4037]/90 leading-relaxed mb-4">
-              Founded in the heart of Sunyani, Ernemako Restaurant began with a simple mission: to serve authentic, soul-warming Ghanaian dishes in a modern, welcoming environment.
-            </p>
-            <p className="text-[#5D4037]/90 leading-relaxed mb-4">
-              We believe that great food brings people together. That's why we source our ingredients locally from farmers in the Bono Region, ensuring every bite bursts with freshness and flavor.
-            </p>
+            {aboutContent?.content ? (
+              <div className="text-[#5D4037]/90 leading-relaxed mb-4 whitespace-pre-line">
+                {aboutContent.content}
+              </div>
+            ) : (
+              <>
+                <p className="text-[#5D4037]/90 leading-relaxed mb-4">
+                  Founded in the heart of Sunyani, Ernemako Restaurant began with a simple mission: to serve authentic, soul-warming Ghanaian dishes in a modern, welcoming environment.
+                </p>
+                <p className="text-[#5D4037]/90 leading-relaxed mb-4">
+                  We believe that great food brings people together. That's why we source our ingredients locally from farmers in the Bono Region, ensuring every bite bursts with freshness and flavor.
+                </p>
+              </>
+            )}
             <div className="grid grid-cols-2 gap-4 mt-6">
               <div className="text-center p-4 bg-white rounded-xl border-2 border-[#8D6E63]/20 shadow-sm">
-                <div className="text-3xl font-bold text-[#8D6E63]">10+</div>
+                <div className="text-3xl font-bold text-[#8D6E63]">{aboutContent?.years_experience || 10}+</div>
                 <div className="text-sm text-[#5D4037]/70">Years Experience</div>
               </div>
               <div className="text-center p-4 bg-white rounded-xl border-2 border-[#8D6E63]/20 shadow-sm">
-                <div className="text-3xl font-bold text-[#8D6E63]">50+</div>
+                <div className="text-3xl font-bold text-[#8D6E63]">{aboutContent?.menu_items_count || 50}+</div>
                 <div className="text-sm text-[#5D4037]/70">Menu Items</div>
               </div>
             </div>
