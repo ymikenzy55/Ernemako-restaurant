@@ -21,7 +21,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Poll for new messages every 30 seconds
+  // Real-time notifications with Supabase subscriptions
   useEffect(() => {
     const loadNotifications = async () => {
       try {
@@ -33,9 +33,23 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
     };
 
     loadNotifications();
-    const interval = setInterval(loadNotifications, 30000); // Poll every 30 seconds
 
-    return () => clearInterval(interval);
+    // Set up real-time subscription for instant updates
+    import('../../lib/supabase').then(({ supabase }) => {
+      const subscription = supabase
+        .channel('notifications')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'contact_messages' },
+          () => {
+            loadNotifications(); // Reload when messages change
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    });
   }, []);
 
   const menuItems = [
@@ -133,7 +147,28 @@ const MessagesSection = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   const loadMessages = () => contactApi.getAll().then(setMessages).catch(e => toast.error('Failed to load messages'));
-  useEffect(() => { loadMessages(); }, []);
+  
+  useEffect(() => { 
+    loadMessages();
+    
+    // Set up real-time subscription
+    import('../../lib/supabase').then(({ supabase }) => {
+      const subscription = supabase
+        .channel('contact_messages_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'contact_messages' },
+          (payload) => {
+            console.log('Message change detected:', payload);
+            loadMessages(); // Reload messages when any change occurs
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    });
+  }, []);
 
   const handleStatusUpdate = async (id: string, status: ContactMessage['status']) => {
     try {
@@ -315,6 +350,28 @@ const MenuSection = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   const loadItems = () => menuApi.getAll().then(setItems).catch(e => toast.error('Failed to load menu items'));
+  
+  useEffect(() => { 
+    loadItems();
+    
+    // Set up real-time subscription
+    import('../../lib/supabase').then(({ supabase }) => {
+      const subscription = supabase
+        .channel('menu_items_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'menu_items' },
+          (payload) => {
+            console.log('Menu change detected:', payload);
+            loadItems(); // Reload menu when any change occurs
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    });
+  }, []);
   useEffect(() => { loadItems(); }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -469,7 +526,28 @@ const GallerySection = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null; path: string | null }>({ isOpen: false, id: null, path: null });
 
   const loadImages = () => galleryApi.getAll().then(setImages).catch(e => toast.error('Failed to load gallery'));
-  useEffect(() => { loadImages(); }, []);
+  
+  useEffect(() => { 
+    loadImages();
+    
+    // Set up real-time subscription
+    import('../../lib/supabase').then(({ supabase }) => {
+      const subscription = supabase
+        .channel('gallery_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'gallery' },
+          (payload) => {
+            console.log('Gallery change detected:', payload);
+            loadImages(); // Reload gallery when any change occurs
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    });
+  }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

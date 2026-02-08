@@ -705,12 +705,10 @@ const FeaturedMenuSection = ({ onNavigate }: { onNavigate: (screen: ScreenType) 
   const [featuredDishes, setFeaturedDishes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Import menuApi dynamically to avoid circular dependencies
+  const loadFeaturedItems = () => {
     import('../../lib/adminApi').then(({ menuApi }) => {
       menuApi.getAll()
         .then(items => {
-          // Filter for featured and active items
           const featured = items.filter(item => item.featured && item.status === 'active').slice(0, 4);
           setFeaturedDishes(featured);
           setLoading(false);
@@ -719,6 +717,28 @@ const FeaturedMenuSection = ({ onNavigate }: { onNavigate: (screen: ScreenType) 
           console.error('Failed to load featured items:', error);
           setLoading(false);
         });
+    });
+  };
+
+  useEffect(() => {
+    loadFeaturedItems();
+    
+    // Set up real-time subscription
+    import('../../lib/supabase').then(({ supabase }) => {
+      const subscription = supabase
+        .channel('featured_menu_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'menu_items' },
+          () => {
+            console.log('Menu change detected, reloading featured items');
+            loadFeaturedItems();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
     });
   }, []);
 
@@ -953,8 +973,7 @@ const InstagramGallerySection = () => {
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Load gallery images from database
+  const loadGalleryImages = () => {
     import('../../lib/adminApi').then(({ galleryApi }) => {
       galleryApi.getAll()
         .then(images => {
@@ -965,6 +984,28 @@ const InstagramGallerySection = () => {
           console.error('Failed to load gallery:', error);
           setLoading(false);
         });
+    });
+  };
+
+  useEffect(() => {
+    loadGalleryImages();
+    
+    // Set up real-time subscription
+    import('../../lib/supabase').then(({ supabase }) => {
+      const subscription = supabase
+        .channel('gallery_user_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'gallery' },
+          () => {
+            console.log('Gallery change detected, reloading images');
+            loadGalleryImages();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
     });
   }, []);
 
