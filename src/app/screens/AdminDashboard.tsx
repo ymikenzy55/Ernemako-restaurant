@@ -723,17 +723,55 @@ const GallerySection = () => {
 
 const AboutSection = () => {
   const [content, setContent] = useState<AboutContent | null>(null);
-  const [formData, setFormData] = useState({ content: '', years_experience: 0, menu_items_count: 0 });
+  const [formData, setFormData] = useState({ 
+    content: '', 
+    years_experience: 0, 
+    menu_items_count: 0,
+    image_1_url: '',
+    image_2_url: ''
+  });
   const [loading, setLoading] = useState(false);
+  const [uploadingImage1, setUploadingImage1] = useState(false);
+  const [uploadingImage2, setUploadingImage2] = useState(false);
 
   useEffect(() => {
     aboutApi.get().then(data => {
       if (data) {
         setContent(data);
-        setFormData({ content: data.content, years_experience: data.years_experience, menu_items_count: data.menu_items_count });
+        setFormData({ 
+          content: data.content, 
+          years_experience: data.years_experience, 
+          menu_items_count: data.menu_items_count,
+          image_1_url: data.image_1_url || '',
+          image_2_url: data.image_2_url || ''
+        });
       }
     }).catch(console.error);
   }, []);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, imageNumber: 1 | 2) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (imageNumber === 1) setUploadingImage1(true);
+    else setUploadingImage2(true);
+    
+    try {
+      const url = await menuApi.uploadImage(file);
+      if (imageNumber === 1) {
+        setFormData(prev => ({ ...prev, image_1_url: url }));
+      } else {
+        setFormData(prev => ({ ...prev, image_2_url: url }));
+      }
+      toast.success(`Image ${imageNumber} uploaded`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image');
+    }
+    
+    if (imageNumber === 1) setUploadingImage1(false);
+    else setUploadingImage2(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -750,24 +788,101 @@ const AboutSection = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl">
-      <h3 className="text-xl font-bold mb-6">About Page Content</h3>
+    <div className="bg-white p-4 md:p-6 rounded-xl">
+      <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6">About Page Content</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block font-medium mb-2">About Content</label>
-          <textarea value={formData.content} onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))} className="w-full p-3 border rounded-lg" rows={8} placeholder="Tell your restaurant's story..." required />
+          <label className="block font-medium mb-2 text-sm md:text-base">About Content</label>
+          <textarea 
+            value={formData.content} 
+            onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))} 
+            className="w-full p-3 border rounded-lg text-sm md:text-base" 
+            rows={8} 
+            placeholder="Tell your restaurant's story..." 
+            required 
+          />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block font-medium mb-2">Years of Experience</label>
-            <input type="number" value={formData.years_experience} onChange={e => setFormData(prev => ({ ...prev, years_experience: parseInt(e.target.value) }))} className="w-full p-3 border rounded-lg" required />
+            <label className="block font-medium mb-2 text-sm md:text-base">Years of Experience</label>
+            <input 
+              type="number" 
+              value={formData.years_experience} 
+              onChange={e => setFormData(prev => ({ ...prev, years_experience: parseInt(e.target.value) }))} 
+              className="w-full p-3 border rounded-lg text-sm md:text-base" 
+              required 
+            />
           </div>
           <div>
-            <label className="block font-medium mb-2">Menu Items Count</label>
-            <input type="number" value={formData.menu_items_count} onChange={e => setFormData(prev => ({ ...prev, menu_items_count: parseInt(e.target.value) }))} className="w-full p-3 border rounded-lg" required />
+            <label className="block font-medium mb-2 text-sm md:text-base">Menu Items Count</label>
+            <input 
+              type="number" 
+              value={formData.menu_items_count} 
+              onChange={e => setFormData(prev => ({ ...prev, menu_items_count: parseInt(e.target.value) }))} 
+              className="w-full p-3 border rounded-lg text-sm md:text-base" 
+              required 
+            />
           </div>
         </div>
-        <Button type="submit" disabled={loading}>Save Changes</Button>
+
+        {/* Image Upload Section */}
+        <div className="border-t pt-4 mt-4">
+          <h4 className="font-medium mb-4 text-sm md:text-base">About Section Images</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Image 1 */}
+            <div>
+              <label className="block font-medium mb-2 text-sm">Image 1</label>
+              {formData.image_1_url && (
+                <div className="mb-2">
+                  <img 
+                    src={formData.image_1_url} 
+                    alt="About Image 1" 
+                    className="w-full h-40 object-cover rounded-lg border-2 border-gray-200"
+                  />
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, 1)}
+                disabled={uploadingImage1}
+                className="w-full p-2 border rounded-lg text-sm"
+              />
+              {uploadingImage1 && (
+                <p className="text-xs text-gray-500 mt-1">Uploading...</p>
+              )}
+            </div>
+
+            {/* Image 2 */}
+            <div>
+              <label className="block font-medium mb-2 text-sm">Image 2</label>
+              {formData.image_2_url && (
+                <div className="mb-2">
+                  <img 
+                    src={formData.image_2_url} 
+                    alt="About Image 2" 
+                    className="w-full h-40 object-cover rounded-lg border-2 border-gray-200"
+                  />
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, 2)}
+                disabled={uploadingImage2}
+                className="w-full p-2 border rounded-lg text-sm"
+              />
+              {uploadingImage2 && (
+                <p className="text-xs text-gray-500 mt-1">Uploading...</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <Button type="submit" disabled={loading}>
+          {loading ? 'Saving...' : 'Save Changes'}
+        </Button>
       </form>
     </div>
   );

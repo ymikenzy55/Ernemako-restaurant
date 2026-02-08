@@ -321,6 +321,8 @@ export interface AboutContent {
   content: string;
   years_experience: number;
   menu_items_count: number;
+  image_1_url?: string;
+  image_2_url?: string;
   updated_at: string;
 }
 

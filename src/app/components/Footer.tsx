@@ -145,18 +145,6 @@ export const Footer = ({ onNavigate }: FooterProps) => {
                 </button>
               </li>
               <li>
-                <button onClick={() => onNavigate('RESERVATION')} className="text-xs md:text-sm hover:text-[#8D6E63] hover:translate-x-1 transition-all inline-flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#8D6E63]"></span>
-                  Make Reservation
-                </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('WAITLIST')} className="text-xs md:text-sm hover:text-[#8D6E63] hover:translate-x-1 transition-all inline-flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#8D6E63]"></span>
-                  Join Waitlist
-                </button>
-              </li>
-              <li>
                 <button onClick={() => onNavigate('HELP')} className="text-xs md:text-sm hover:text-[#8D6E63] hover:translate-x-1 transition-all inline-flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#8D6E63]"></span>
                   Help & Support

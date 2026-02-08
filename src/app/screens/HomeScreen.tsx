@@ -480,13 +480,13 @@ const AboutSection = () => {
           >
             <motion.img
               whileHover={{ scale: 1.05, rotate: 0 }}
-              src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=75&auto=format&fit=crop"
+              src={aboutContent?.image_1_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=75&auto=format&fit=crop"}
               className="rounded-xl shadow-md rotate-2 transition-transform duration-500 w-full h-64 object-cover border-4 border-white"
               alt="Food preparation"
             />
             <motion.img
               whileHover={{ scale: 1.05, rotate: 0 }}
-              src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=75&auto=format&fit=crop"
+              src={aboutContent?.image_2_url || "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=75&auto=format&fit=crop"}
               className="rounded-xl shadow-md -rotate-2 transition-transform duration-500 mt-8 w-full h-64 object-cover border-4 border-white"
               alt="Delicious dish"
             />
