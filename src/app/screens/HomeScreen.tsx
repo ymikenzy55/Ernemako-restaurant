@@ -54,6 +54,42 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
   const [isOpen, setIsOpen] = useState(isRestaurantOpen());
   const [openingMessage, setOpeningMessage] = useState(getOpeningMessage());
   const [heroBanner, setHeroBanner] = useState<HeroBanner | null>(null);
+  const [actionCards, setActionCards] = useState<any[]>([]);
+  const [actionCardsLoading, setActionCardsLoading] = useState(true);
+  
+  // Load action cards from database
+  useEffect(() => {
+    const loadActionCards = async () => {
+      try {
+        const { actionCardsApi } = await import('../../lib/adminApi');
+        const cards = await actionCardsApi.getAll();
+        setActionCards(cards);
+      } catch (error) {
+        console.error('Failed to load action cards:', error);
+      }
+      setActionCardsLoading(false);
+    };
+    
+    loadActionCards();
+    
+    // Set up real-time subscription
+    import('../../lib/supabase').then(({ supabase }) => {
+      const subscription = supabase
+        .channel('action_cards_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'action_cards' },
+          () => {
+            console.log('Action cards changed, reloading');
+            loadActionCards();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    });
+  }, []);
   
   // Load hero banner from database
   useEffect(() => {
@@ -273,73 +309,49 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
       </div>
 
       {/* Action Cards - Mobile Only (OUTSIDE hero container) */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-        className="md:hidden w-full max-w-2xl px-4 py-6 mx-auto relative z-30 -mt-32"
-      >
-        <div className="grid grid-cols-2 gap-3">
-          <ActionCard
-            title="Order Now"
-            subtitle="Start your order"
-            icon={<ShoppingBag size={24} />}
-            image="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=75&auto=format&fit=crop"
-            onClick={() => onNavigate('MENU')}
-            delay={0.1}
-            animationDirection="left"
-          />
-          <ActionCard
-            title="View Menu"
-            subtitle="Browse our dishes"
-            icon={<UtensilsCrossed size={24} />}
-            image="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=75&auto=format&fit=crop"
-            onClick={() => onNavigate('MENU')}
-            delay={0.2}
-            animationDirection="right"
-          />
-          <ActionCard
-            title="Help & Info"
-            subtitle="Get assistance"
-            icon={<Clock size={24} />}
-            onClick={() => onNavigate('HELP')}
-            delay={0.3}
-            animationDirection="left"
-          />
-        </div>
-      </motion.div>
+      {!actionCardsLoading && actionCards.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+          className="md:hidden w-full max-w-2xl px-4 py-6 mx-auto relative z-30 -mt-32"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            {actionCards.slice(0, 3).map((card, index) => (
+              <ActionCard
+                key={card.id}
+                title={card.title}
+                subtitle={card.subtitle}
+                icon={<ShoppingBag size={24} />}
+                image={card.image_url}
+                onClick={() => onNavigate(card.link_screen as ScreenType)}
+                delay={0.1 * (index + 1)}
+                animationDirection={index % 2 === 0 ? 'left' : 'right'}
+              />
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Action Cards Grid - Desktop Only (overlapping) */}
-      <div className="hidden md:block relative z-20 -mt-40 px-4 py-20 bg-gradient-to-b from-transparent via-[#FDFBF7]/80 to-[#FDFBF7]">
-        <div className="grid grid-cols-2 gap-6 max-w-5xl mx-auto w-full relative z-10">
-          <ActionCard
-            title="Order Now"
-            subtitle="Start your order"
-            icon={<ShoppingBag size={28} />}
-            image="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=75&auto=format&fit=crop"
-            onClick={() => onNavigate('MENU')}
-            delay={0.1}
-            animationDirection="left"
-          />
-          <ActionCard
-            title="View Menu"
-            subtitle="Browse our dishes"
-            icon={<UtensilsCrossed size={28} />}
-            image="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=75&auto=format&fit=crop"
-            onClick={() => onNavigate('MENU')}
-            delay={0.2}
-            animationDirection="right"
-          />
-          <ActionCard
-            title="Help & Info"
-            subtitle="Get assistance"
-            icon={<Clock size={28} />}
-            onClick={() => onNavigate('HELP')}
-            delay={0.3}
-            animationDirection="left"
-          />
+      {!actionCardsLoading && actionCards.length > 0 && (
+        <div className="hidden md:block relative z-20 -mt-40 px-4 py-20 bg-gradient-to-b from-transparent via-[#FDFBF7]/80 to-[#FDFBF7]">
+          <div className="grid grid-cols-2 gap-6 max-w-5xl mx-auto w-full relative z-10">
+            {actionCards.slice(0, 3).map((card, index) => (
+              <ActionCard
+                key={card.id}
+                title={card.title}
+                subtitle={card.subtitle}
+                icon={<UtensilsCrossed size={28} />}
+                image={card.image_url}
+                onClick={() => onNavigate(card.link_screen as ScreenType)}
+                delay={0.1 * (index + 1)}
+                animationDirection={index % 2 === 0 ? 'left' : 'right'}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Additional Content Section */}
       <div className="relative z-20 px-4 py-12 md:py-20 bg-[#FDFBF7]">

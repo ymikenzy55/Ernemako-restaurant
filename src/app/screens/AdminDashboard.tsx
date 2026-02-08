@@ -11,7 +11,7 @@ import {
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
-type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'messages' | 'about' | 'hero' | 'settings';
+type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'messages' | 'about' | 'hero' | 'action-cards' | 'settings';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -60,6 +60,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
     { id: 'gallery' as AdminSection, label: 'Gallery', icon: ImageIcon },
     { id: 'about' as AdminSection, label: 'About Page', icon: FileText },
     { id: 'hero' as AdminSection, label: 'Hero Banner', icon: ImageIcon },
+    { id: 'action-cards' as AdminSection, label: 'Action Cards', icon: LayoutDashboard },
     { id: 'settings' as AdminSection, label: 'Settings', icon: SettingsIcon },
   ];
 
@@ -181,6 +182,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
             {activeSection === 'gallery' && <GallerySection />}
             {activeSection === 'about' && <AboutSection />}
             {activeSection === 'hero' && <HeroBannerSection />}
+            {activeSection === 'action-cards' && <ActionCardsSection />}
             {activeSection === 'settings' && <SettingsSection />}
           </main>
         </div>
@@ -1032,6 +1034,336 @@ const HeroBannerSection = () => {
   );
 };
 
+const ActionCardsSection = () => {
+  const [cards, setCards] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingCard, setEditingCard] = useState<any | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    subtitle: '',
+    image_url: '',
+    action_type: 'menu' as 'menu' | 'order' | 'help' | 'custom',
+    link_screen: 'MENU',
+    display_order: 0,
+    is_active: true
+  });
+  const [uploading, setUploading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; card: any | null }>({ isOpen: false, card: null });
+
+  useEffect(() => {
+    loadCards();
+  }, []);
+
+  const loadCards = async () => {
+    setLoading(true);
+    try {
+      const { actionCardsApi } = await import('../../lib/adminApi');
+      const allCards = await actionCardsApi.getAll();
+      setCards(allCards);
+    } catch (error) {
+      console.error('Failed to load action cards:', error);
+      toast.error('Failed to load action cards');
+    }
+    setLoading(false);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploading(true);
+    try {
+      const { actionCardsApi } = await import('../../lib/adminApi');
+      const url = await actionCardsApi.uploadImage(file);
+      setFormData(prev => ({ ...prev, image_url: url }));
+      toast.success('Image uploaded');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image');
+    }
+    setUploading(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const { actionCardsApi } = await import('../../lib/adminApi');
+      
+      if (editingCard) {
+        await actionCardsApi.update(editingCard.id, formData);
+        toast.success('Action card updated');
+      } else {
+        await actionCardsApi.create(formData);
+        toast.success('Action card created');
+      }
+      
+      setFormData({
+        title: '',
+        subtitle: '',
+        image_url: '',
+        action_type: 'menu',
+        link_screen: 'MENU',
+        display_order: 0,
+        is_active: true
+      });
+      setEditingCard(null);
+      setShowAddForm(false);
+      loadCards();
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save action card');
+    }
+    setLoading(false);
+  };
+
+  const handleEdit = (card: any) => {
+    setEditingCard(card);
+    setFormData({
+      title: card.title,
+      subtitle: card.subtitle,
+      image_url: card.image_url,
+      action_type: card.action_type,
+      link_screen: card.link_screen || 'MENU',
+      display_order: card.display_order,
+      is_active: card.is_active
+    });
+    setShowAddForm(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteConfirm.card) return;
+    
+    try {
+      const { actionCardsApi } = await import('../../lib/adminApi');
+      await actionCardsApi.delete(deleteConfirm.card.id);
+      toast.success('Action card deleted');
+      loadCards();
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete action card');
+    }
+    setDeleteConfirm({ isOpen: false, card: null });
+  };
+
+  const cancelEdit = () => {
+    setEditingCard(null);
+    setShowAddForm(false);
+    setFormData({
+      title: '',
+      subtitle: '',
+      image_url: '',
+      action_type: 'menu',
+      link_screen: 'MENU',
+      display_order: 0,
+      is_active: true
+    });
+  };
+
+  if (loading && cards.length === 0) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8D6E63]"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold text-[#3E2723]">Action Cards</h2>
+          <p className="text-sm text-gray-600">Manage homepage action cards</p>
+        </div>
+        {!showAddForm && (
+          <Button onClick={() => setShowAddForm(true)}>
+            <Plus size={20} />
+            <span className="ml-2">Add Card</span>
+          </Button>
+        )}
+      </div>
+
+      {/* Add/Edit Form */}
+      {showAddForm && (
+        <div className="bg-white p-4 md:p-6 rounded-xl border-2 border-[#8D6E63]/20">
+          <h3 className="text-lg font-bold mb-4">{editingCard ? 'Edit' : 'Add'} Action Card</h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-medium mb-2 text-sm">Title</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full p-3 border rounded-lg text-sm"
+                  placeholder="Order Now"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block font-medium mb-2 text-sm">Subtitle</label>
+                <input
+                  type="text"
+                  value={formData.subtitle}
+                  onChange={e => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
+                  className="w-full p-3 border rounded-lg text-sm"
+                  placeholder="Start your order"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-medium mb-2 text-sm">Action Type</label>
+                <select
+                  value={formData.action_type}
+                  onChange={e => setFormData(prev => ({ ...prev, action_type: e.target.value as any }))}
+                  className="w-full p-3 border rounded-lg text-sm"
+                >
+                  <option value="menu">Menu</option>
+                  <option value="order">Order</option>
+                  <option value="help">Help</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-medium mb-2 text-sm">Link Screen</label>
+                <select
+                  value={formData.link_screen}
+                  onChange={e => setFormData(prev => ({ ...prev, link_screen: e.target.value }))}
+                  className="w-full p-3 border rounded-lg text-sm"
+                >
+                  <option value="MENU">Menu</option>
+                  <option value="HELP">Help</option>
+                  <option value="HOME">Home</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-medium mb-2 text-sm">Display Order</label>
+              <input
+                type="number"
+                value={formData.display_order}
+                onChange={e => setFormData(prev => ({ ...prev, display_order: parseInt(e.target.value) }))}
+                className="w-full p-3 border rounded-lg text-sm"
+                min="0"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium mb-2 text-sm">Card Image</label>
+              {formData.image_url && (
+                <div className="mb-2">
+                  <img 
+                    src={formData.image_url} 
+                    alt="Card preview" 
+                    className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
+                  />
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploading}
+                className="w-full p-2 border rounded-lg text-sm"
+              />
+              {uploading && <p className="text-xs text-gray-500 mt-1">Uploading...</p>}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={formData.is_active}
+                onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                className="w-4 h-4"
+              />
+              <label htmlFor="is_active" className="text-sm">Active (show on homepage)</label>
+            </div>
+
+            <div className="flex gap-2">
+              <Button type="submit" disabled={loading || uploading}>
+                {loading ? 'Saving...' : editingCard ? 'Update' : 'Create'}
+              </Button>
+              <Button type="button" variant="outline" onClick={cancelEdit}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Cards List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {cards.map(card => (
+          <div key={card.id} className="bg-white rounded-xl overflow-hidden border-2 border-gray-200 hover:border-[#8D6E63]/40 transition-all">
+            {card.image_url && (
+              <img 
+                src={card.image_url} 
+                alt={card.title} 
+                className="w-full h-40 object-cover"
+              />
+            )}
+            <div className="p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <h3 className="font-bold text-[#3E2723]">{card.title}</h3>
+                  <p className="text-sm text-gray-600">{card.subtitle}</p>
+                </div>
+                {card.is_active && (
+                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Active</span>
+                )}
+              </div>
+              <div className="text-xs text-gray-500 mb-3">
+                <p>Type: {card.action_type}</p>
+                <p>Order: {card.display_order}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEdit(card)}
+                  className="flex-1 px-3 py-2 bg-[#8D6E63] text-white rounded-lg hover:bg-[#795548] transition-colors text-sm flex items-center justify-center gap-1"
+                >
+                  <Edit size={14} />
+                  Edit
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm({ isOpen: true, card })}
+                  className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {cards.length === 0 && !showAddForm && (
+        <div className="text-center py-12 bg-white rounded-xl">
+          <p className="text-gray-500 mb-4">No action cards yet</p>
+          <Button onClick={() => setShowAddForm(true)}>
+            <Plus size={20} />
+            <span className="ml-2">Add Your First Card</span>
+          </Button>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Delete Action Card"
+        message={`Are you sure you want to delete "${deleteConfirm.card?.title}"? This action cannot be undone.`}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirm({ isOpen: false, card: null })}
+      />
+    </div>
+  );
+};
 
 const SettingsSection = () => {
   const [activeTab, setActiveTab] = useState<'password' | 'admins'>('password');

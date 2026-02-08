@@ -551,6 +551,89 @@ export const heroBannerApi = {
 };
 
 // ============================================
+// ACTION CARDS OPERATIONS
+// ============================================
+
+export interface ActionCard {
+  id: string;
+  title: string;
+  subtitle: string;
+  image_url: string;
+  action_type: 'menu' | 'order' | 'help' | 'custom';
+  link_screen?: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const actionCardsApi = {
+  // Get all action cards
+  async getAll(): Promise<ActionCard[]> {
+    const { data, error } = await supabase
+      .from('action_cards')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  // Get single action card
+  async getById(id: string): Promise<ActionCard | null> {
+    const { data, error } = await supabase
+      .from('action_cards')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Create action card
+  async create(card: Omit<ActionCard, 'id' | 'created_at' | 'updated_at'>): Promise<ActionCard> {
+    const { data, error } = await supabase
+      .from('action_cards')
+      .insert([card])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Update action card
+  async update(id: string, card: Partial<Omit<ActionCard, 'id' | 'created_at' | 'updated_at'>>): Promise<ActionCard> {
+    const { data, error } = await supabase
+      .from('action_cards')
+      .update({ ...card, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Delete action card
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('action_cards')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+
+  // Upload image for action card
+  async uploadImage(file: File): Promise<string> {
+    return menuApi.uploadImage(file); // Reuse the same upload function
+  }
+};
+
+// ============================================
 // DASHBOARD STATS
 // ============================================
 
