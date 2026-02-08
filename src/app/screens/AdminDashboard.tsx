@@ -5,13 +5,13 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { 
-  galleryApi, menuApi, reservationApi, contactApi, dashboardApi, adminApi, aboutApi,
-  type GalleryImage, type MenuItem, type Reservation, type ContactMessage, type AboutContent
+  galleryApi, menuApi, contactApi, dashboardApi, adminApi, aboutApi,
+  type GalleryImage, type MenuItem, type ContactMessage, type AboutContent
 } from '../../lib/adminApi';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
-type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'reservations' | 'messages' | 'about' | 'hero' | 'settings';
+type AdminSection = 'dashboard' | 'gallery' | 'menu' | 'messages' | 'about' | 'hero' | 'settings';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -20,18 +20,13 @@ interface AdminDashboardProps {
 export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
   const [unreadCount, setUnreadCount] = useState(0);
-  const [pendingReservations, setPendingReservations] = useState(0);
 
-  // Poll for new messages and reservations every 30 seconds
+  // Poll for new messages every 30 seconds
   useEffect(() => {
     const loadNotifications = async () => {
       try {
-        const [messages, reservations] = await Promise.all([
-          contactApi.getAll(),
-          reservationApi.getAll()
-        ]);
+        const messages = await contactApi.getAll();
         setUnreadCount(messages.filter(m => m.status === 'unread').length);
-        setPendingReservations(reservations.filter(r => r.status === 'pending').length);
       } catch (error) {
         console.error('Failed to load notifications:', error);
       }
@@ -46,7 +41,6 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const menuItems = [
     { id: 'dashboard' as AdminSection, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'messages' as AdminSection, label: 'Messages', icon: MessageSquare, badge: unreadCount },
-    { id: 'reservations' as AdminSection, label: 'Reservations', icon: Calendar, badge: pendingReservations },
     { id: 'menu' as AdminSection, label: 'Menu', icon: UtensilsCrossed },
     { id: 'gallery' as AdminSection, label: 'Gallery', icon: ImageIcon },
     { id: 'about' as AdminSection, label: 'About Page', icon: FileText },
@@ -99,7 +93,6 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
         <main className="flex-1 overflow-y-auto p-3 md:p-8">
           {activeSection === 'dashboard' && <DashboardSection />}
           {activeSection === 'messages' && <MessagesSection />}
-          {activeSection === 'reservations' && <ReservationsSection />}
           {activeSection === 'menu' && <MenuSection />}
           {activeSection === 'gallery' && <GallerySection />}
           {activeSection === 'about' && <AboutSection />}
@@ -112,12 +105,11 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
 };
 
 const DashboardSection = () => {
-  const [stats, setStats] = useState({ totalReservations: 0, unreadMessages: 0, menuItemsCount: 0, galleryImagesCount: 0 });
+  const [stats, setStats] = useState({ unreadMessages: 0, menuItemsCount: 0, galleryImagesCount: 0 });
   useEffect(() => { dashboardApi.getStats().then(setStats).catch(console.error); }, []);
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
       {[
-        { label: 'Reservations', value: stats.totalReservations, color: 'bg-blue-500' },
         { label: 'Messages', value: stats.unreadMessages, color: 'bg-orange-500' },
         { label: 'Menu Items', value: stats.menuItemsCount, color: 'bg-green-500' },
         { label: 'Gallery', value: stats.galleryImagesCount, color: 'bg-purple-500' },
@@ -302,119 +294,6 @@ const MessagesSection = () => {
                     <span className="text-xs text-green-600 font-medium whitespace-nowrap">✓ Replied</span>
                   )}
                   <button onClick={() => setDeleteConfirm({ isOpen: true, id: msg.id })} className="p-2 hover:bg-red-100 text-red-600 rounded flex-shrink-0">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const ReservationsSection = () => {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all');
-  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
-
-  const loadReservations = () => reservationApi.getAll().then(setReservations).catch(e => toast.error('Failed to load reservations'));
-  useEffect(() => { loadReservations(); }, []);
-
-  const handleStatusUpdate = async (id: string, status: Reservation['status']) => {
-    try {
-      await reservationApi.updateStatus(id, status);
-      toast.success(`Reservation ${status}`);
-      loadReservations();
-    } catch (error) {
-      toast.error('Failed to update status');
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteConfirm.id) return;
-    try {
-      await reservationApi.delete(deleteConfirm.id);
-      toast.success('Reservation deleted');
-      loadReservations();
-    } catch (error) {
-      toast.error('Failed to delete');
-    }
-  };
-
-  const filteredReservations = filter === 'all' ? reservations : reservations.filter(r => r.status === filter);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'completed': return 'bg-green-100 text-green-800 border-green-300';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
-  };
-
-  return (
-    <div className="space-y-4 md:space-y-6">
-      <ConfirmDialog
-        isOpen={deleteConfirm.isOpen}
-        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
-        onConfirm={handleDelete}
-        title="Delete Reservation"
-        message="Are you sure you want to delete this reservation? This action cannot be undone."
-        confirmText="Delete"
-        variant="danger"
-      />
-      
-      <div className="flex flex-wrap gap-2">
-        {['all', 'pending', 'confirmed', 'completed'].map(f => (
-          <button key={f} onClick={() => setFilter(f as any)} className={`px-3 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base ${filter === f ? 'bg-[#8D6E63] text-white' : 'bg-white border'}`}>
-            {f.charAt(0).toUpperCase() + f.slice(1)} ({f === 'all' ? reservations.length : reservations.filter(r => r.status === f).length})
-          </button>
-        ))}
-      </div>
-
-      {filteredReservations.length === 0 ? (
-        <div className="bg-white p-12 rounded-xl text-center text-gray-500">
-          No {filter !== 'all' ? filter : ''} reservations found
-        </div>
-      ) : (
-        <div className="space-y-3 md:space-y-4">
-          {filteredReservations.map(res => (
-            <div key={res.id} className={`bg-white p-4 md:p-6 rounded-xl border-2 ${getStatusColor(res.status)}`}>
-              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 md:gap-3 mb-2 flex-wrap">
-                    <h4 className="font-bold text-base md:text-lg truncate">{res.customer_name}</h4>
-                    <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(res.status)} flex-shrink-0`}>
-                      {res.status.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="space-y-1 text-xs md:text-sm">
-                    <p><Calendar size={14} className="md:w-4 md:h-4 inline mr-2" />{res.date} at {res.time}</p>
-                    <p><UtensilsCrossed size={14} className="md:w-4 md:h-4 inline mr-2" />{res.guests} guests</p>
-                    <p className="break-all"><MessageSquare size={14} className="md:w-4 md:h-4 inline mr-2" />{res.phone}</p>
-                    {res.special_requests && <p className="text-gray-600 italic break-words">Note: {res.special_requests}</p>}
-                  </div>
-                </div>
-                <div className="flex md:flex-col gap-2 flex-wrap md:flex-nowrap">
-                  {res.status === 'pending' && (
-                    <>
-                      <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'confirmed')} className="bg-blue-500 flex-1 md:flex-none">
-                        <Check size={16} /> <span className="hidden sm:inline">Confirm</span>
-                      </Button>
-                      <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'cancelled')} className="bg-red-500 flex-1 md:flex-none">
-                        <X size={16} /> <span className="hidden sm:inline">Cancel</span>
-                      </Button>
-                    </>
-                  )}
-                  {res.status === 'confirmed' && (
-                    <Button size="sm" onClick={() => handleStatusUpdate(res.id, 'completed')} className="bg-green-500 w-full md:w-auto">
-                      <Check size={16} /> Complete
-                    </Button>
-                  )}
-                  <button onClick={() => setDeleteConfirm({ isOpen: true, id: res.id })} className="p-2 hover:bg-red-100 text-red-600 rounded text-sm flex-shrink-0">
                     <Trash2 size={16} />
                   </button>
                 </div>

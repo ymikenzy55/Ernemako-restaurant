@@ -455,15 +455,6 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    onNavigate?.('RESERVATION');
-                  }}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors"
-                >
-                  Make Reservation
-                </button>
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
                     onNavigate?.('HELP');
                   }}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors"

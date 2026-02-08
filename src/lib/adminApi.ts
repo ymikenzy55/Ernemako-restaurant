@@ -554,19 +554,15 @@ export const heroBannerApi = {
 
 export const dashboardApi = {
   async getStats() {
-    const [reservations, menuItems, galleryImages, messages] = await Promise.all([
-      reservationApi.getAll(),
+    const [menuItems, galleryImages, messages] = await Promise.all([
       menuApi.getAll(),
       galleryApi.getAll(),
       contactApi.getAll()
     ]);
 
-    const pendingReservations = reservations.filter(r => r.status === 'pending').length;
     const unreadMessages = messages.filter(m => m.status === 'unread').length;
 
     return {
-      totalReservations: reservations.length,
-      pendingReservations,
       menuItemsCount: menuItems.length,
       galleryImagesCount: galleryImages.length,
       unreadMessages

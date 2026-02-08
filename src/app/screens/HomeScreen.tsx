@@ -299,20 +299,12 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
             animationDirection="right"
           />
           <ActionCard
-            title="Make Reservation"
-            subtitle="Book a table"
-            icon={<CalendarCheck size={24} />}
-            onClick={() => onNavigate('RESERVATION')}
-            delay={0.3}
-            animationDirection="left"
-          />
-          <ActionCard
             title="Help & Info"
             subtitle="Get assistance"
             icon={<Clock size={24} />}
             onClick={() => onNavigate('HELP')}
-            delay={0.4}
-            animationDirection="right"
+            delay={0.3}
+            animationDirection="left"
           />
         </div>
       </motion.div>
@@ -339,20 +331,12 @@ export const HomeScreen = ({ onNavigate }: HomeScreenProps) => {
             animationDirection="right"
           />
           <ActionCard
-            title="Make Reservation"
-            subtitle="Book a table"
-            icon={<CalendarCheck size={28} />}
-            onClick={() => onNavigate('RESERVATION')}
-            delay={0.3}
-            animationDirection="left"
-          />
-          <ActionCard
             title="Help & Info"
             subtitle="Get assistance"
             icon={<Clock size={28} />}
             onClick={() => onNavigate('HELP')}
-            delay={0.4}
-            animationDirection="right"
+            delay={0.3}
+            animationDirection="left"
           />
         </div>
       </div>
