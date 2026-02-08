@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Image as ImageIcon, UtensilsCrossed, Calendar, 
-  FileText, LogOut, MessageSquare, Plus, Trash2, Edit, X, Check, Settings as SettingsIcon, Bell, Send
+  FileText, LogOut, MessageSquare, Plus, Trash2, Edit, X, Check, Settings as SettingsIcon, Bell, Send, Menu
 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { 
@@ -20,6 +20,7 @@ interface AdminDashboardProps {
 export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Real-time notifications with Supabase subscriptions
   useEffect(() => {
@@ -63,56 +64,126 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   ];
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[#FDFBF7]">
-      <aside className="w-full md:w-64 bg-gradient-to-b from-[#3E2723] to-[#2C1810] text-white flex flex-col md:h-screen">
-        <div className="p-4 md:p-6 border-b border-white/10">
-          <h1 className="font-bold text-base md:text-lg">ERNEMAKO</h1>
+    <div className="flex flex-col h-screen bg-[#FDFBF7]">
+      {/* Mobile Header */}
+      <div className="lg:hidden flex items-center justify-between bg-gradient-to-r from-[#3E2723] to-[#2C1810] text-white p-4 border-b border-white/10">
+        <div>
+          <h1 className="font-bold text-lg">ERNEMAKO</h1>
           <p className="text-xs text-[#D7CCC8]">Admin Panel</p>
         </div>
-        <nav className="flex-1 p-2 md:p-4 space-y-1 md:space-y-2 overflow-y-auto">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg relative text-sm md:text-base ${
-                  activeSection === item.id ? 'bg-[#8D6E63]' : 'hover:bg-white/10'
-                }`}
-              >
-                <Icon size={18} className="md:w-5 md:h-5 flex-shrink-0" />
-                <span className="truncate">{item.label}</span>
-                {item.badge && item.badge > 0 && (
-                  <span className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center flex-shrink-0">
-                    {item.badge > 9 ? '9+' : item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-        <div className="p-2 md:p-4 border-t border-white/10">
-          <button onClick={async () => { await adminApi.logout(); onLogout(); }} className="w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg hover:bg-red-500/20 text-red-400 text-sm md:text-base">
-            <LogOut size={18} className="md:w-5 md:h-5" />
-            <span>Logout</span>
-          </button>
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* Desktop Sidebar */}
+        <aside className="hidden lg:flex w-64 bg-gradient-to-b from-[#3E2723] to-[#2C1810] text-white flex-col">
+          <div className="p-6 border-b border-white/10">
+            <h1 className="font-bold text-lg">ERNEMAKO</h1>
+            <p className="text-xs text-[#D7CCC8]">Admin Panel</p>
+          </div>
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg relative ${
+                    activeSection === item.id ? 'bg-[#8D6E63]' : 'hover:bg-white/10'
+                  }`}
+                >
+                  <Icon size={20} />
+                  <span className="text-sm">{item.label}</span>
+                  {item.badge && item.badge > 0 && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                      {item.badge > 9 ? '9+' : item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+          <div className="p-4 border-t border-white/10">
+            <button onClick={async () => { await adminApi.logout(); onLogout(); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-500/20 text-red-400">
+              <LogOut size={20} />
+              <span>Logout</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Mobile Sidebar Overlay */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}>
+            <div 
+              className="absolute left-0 top-0 bottom-0 w-64 bg-gradient-to-b from-[#3E2723] to-[#2C1810] text-white flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                <div>
+                  <h1 className="font-bold text-lg">ERNEMAKO</h1>
+                  <p className="text-xs text-[#D7CCC8]">Admin Panel</p>
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                  <X size={20} />
+                </button>
+              </div>
+              <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                {menuItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg relative ${
+                        activeSection === item.id ? 'bg-[#8D6E63]' : 'hover:bg-white/10'
+                      }`}
+                    >
+                      <Icon size={20} />
+                      <span className="text-sm">{item.label}</span>
+                      {item.badge && item.badge > 0 && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                          {item.badge > 9 ? '9+' : item.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+              <div className="p-4 border-t border-white/10">
+                <button onClick={async () => { await adminApi.logout(); onLogout(); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-500/20 text-red-400">
+                  <LogOut size={20} />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <header className="bg-white border-b px-4 md:px-6 py-3 md:py-4">
+            <h2 className="text-lg md:text-xl font-bold text-[#3E2723]">
+              {menuItems.find(i => i.id === activeSection)?.label}
+            </h2>
+          </header>
+          <main className="flex-1 overflow-y-auto p-3 md:p-6">
+            {activeSection === 'dashboard' && <DashboardSection />}
+            {activeSection === 'messages' && <MessagesSection />}
+            {activeSection === 'menu' && <MenuSection />}
+            {activeSection === 'gallery' && <GallerySection />}
+            {activeSection === 'about' && <AboutSection />}
+            {activeSection === 'hero' && <HeroBannerSection />}
+            {activeSection === 'settings' && <SettingsSection />}
+          </main>
         </div>
-      </aside>
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b px-4 md:px-8 py-3 md:py-4">
-          <h2 className="text-lg md:text-2xl font-bold text-[#3E2723]">
-            {menuItems.find(i => i.id === activeSection)?.label}
-          </h2>
-        </header>
-        <main className="flex-1 overflow-y-auto p-3 md:p-8">
-          {activeSection === 'dashboard' && <DashboardSection />}
-          {activeSection === 'messages' && <MessagesSection />}
-          {activeSection === 'menu' && <MenuSection />}
-          {activeSection === 'gallery' && <GallerySection />}
-          {activeSection === 'about' && <AboutSection />}
-          {activeSection === 'hero' && <HeroBannerSection />}
-          {activeSection === 'settings' && <SettingsSection />}
-        </main>
       </div>
     </div>
   );
@@ -122,7 +193,7 @@ const DashboardSection = () => {
   const [stats, setStats] = useState({ unreadMessages: 0, menuItemsCount: 0, galleryImagesCount: 0 });
   useEffect(() => { dashboardApi.getStats().then(setStats).catch(console.error); }, []);
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
       {[
         { label: 'Messages', value: stats.unreadMessages, color: 'bg-orange-500' },
         { label: 'Menu Items', value: stats.menuItemsCount, color: 'bg-green-500' },
@@ -130,7 +201,7 @@ const DashboardSection = () => {
       ].map(stat => (
         <div key={stat.label} className="bg-white rounded-xl p-4 md:p-6 border-2 border-[#D7CCC8]">
           <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg ${stat.color} mb-3 md:mb-4`} />
-          <h3 className="text-2xl md:text-3xl font-bold">{stat.value}</h3>
+          <h3 className="text-xl md:text-2xl font-bold">{stat.value}</h3>
           <p className="text-xs md:text-sm text-gray-600">{stat.label}</p>
         </div>
       ))}
@@ -455,61 +526,61 @@ const MenuSection = () => {
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-xl border-2 border-[#8D6E63]">
-          <h4 className="font-bold mb-4">{editingItem ? 'Edit' : 'Add'} Menu Item</h4>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input type="text" placeholder="Name" value={formData.name} onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))} className="w-full p-3 border rounded-lg" required />
-            <textarea placeholder="Description" value={formData.description} onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))} className="w-full p-3 border rounded-lg" rows={3} required />
-            <input type="number" placeholder="Price" value={formData.price} onChange={e => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) }))} className="w-full p-3 border rounded-lg" step="0.01" required />
-            <select value={formData.category} onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))} className="w-full p-3 border rounded-lg">
+        <div className="bg-white p-4 md:p-6 rounded-xl border-2 border-[#8D6E63]">
+          <h4 className="font-bold mb-4 text-base md:text-lg">{editingItem ? 'Edit' : 'Add'} Menu Item</h4>
+          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+            <input type="text" placeholder="Name" value={formData.name} onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))} className="w-full p-2 md:p-3 border rounded-lg text-sm md:text-base" required />
+            <textarea placeholder="Description" value={formData.description} onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))} className="w-full p-2 md:p-3 border rounded-lg text-sm md:text-base" rows={3} required />
+            <input type="number" placeholder="Price" value={formData.price} onChange={e => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) }))} className="w-full p-2 md:p-3 border rounded-lg text-sm md:text-base" step="0.01" required />
+            <select value={formData.category} onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))} className="w-full p-2 md:p-3 border rounded-lg text-sm md:text-base">
               <option>Appetizers</option>
               <option>Main Course</option>
               <option>Desserts</option>
               <option>Beverages</option>
             </select>
             <div>
-              <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full p-3 border rounded-lg" disabled={uploading} />
-              {formData.image_url && <img src={formData.image_url} alt="Preview" className="mt-2 h-32 object-cover rounded" />}
+              <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full p-2 md:p-3 border rounded-lg text-sm md:text-base" disabled={uploading} />
+              {formData.image_url && <img src={formData.image_url} alt="Preview" className="mt-2 h-24 md:h-32 object-cover rounded" />}
             </div>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+              <label className="flex items-center gap-2 text-sm md:text-base">
                 <input type="checkbox" checked={formData.status === 'active'} onChange={e => setFormData(prev => ({ ...prev, status: e.target.checked ? 'active' : 'inactive' }))} />
                 Available
               </label>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm md:text-base">
                 <input type="checkbox" checked={formData.featured} onChange={e => setFormData(prev => ({ ...prev, featured: e.target.checked }))} />
                 <span className="flex items-center gap-1">
                   Featured <span className="text-yellow-500">⭐</span>
                 </span>
               </label>
             </div>
-            <div className="flex gap-2">
-              <Button type="submit" disabled={uploading}>{editingItem ? 'Update' : 'Add'}</Button>
-              <Button type="button" onClick={() => setShowForm(false)} className="bg-gray-500">Cancel</Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button type="submit" disabled={uploading} className="w-full sm:w-auto">{editingItem ? 'Update' : 'Add'}</Button>
+              <Button type="button" onClick={() => setShowForm(false)} className="bg-gray-500 w-full sm:w-auto">Cancel</Button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
         {items.map(item => (
-          <div key={item.id} className={`bg-white p-4 rounded-xl border-2 ${item.featured ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200'} flex gap-4`}>
-            {item.image_url && <img src={item.image_url} alt={item.name} className="w-24 h-24 object-cover rounded" />}
-            <div className="flex-1">
+          <div key={item.id} className={`bg-white p-3 md:p-4 rounded-xl border-2 ${item.featured ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200'} flex gap-3 md:gap-4`}>
+            {item.image_url && <img src={item.image_url} alt={item.name} className="w-20 h-20 md:w-24 md:h-24 object-cover rounded flex-shrink-0" />}
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h4 className="font-bold">{item.name}</h4>
-                {item.featured && <span className="text-yellow-500">⭐</span>}
+                <h4 className="font-bold text-sm md:text-base truncate">{item.name}</h4>
+                {item.featured && <span className="text-yellow-500 flex-shrink-0">⭐</span>}
               </div>
-              <p className="text-sm text-gray-600">{item.description}</p>
-              <p className="font-bold text-[#8D6E63]">GH₵{item.price}</p>
+              <p className="text-xs md:text-sm text-gray-600 line-clamp-2">{item.description}</p>
+              <p className="font-bold text-[#8D6E63] text-sm md:text-base">GH₵{item.price}</p>
               <p className="text-xs text-gray-500">{item.category} • {item.status === 'active' ? 'Available' : 'Unavailable'}</p>
             </div>
-            <div className="flex flex-col gap-2">
-              <button onClick={() => toggleFeatured(item)} className="p-2 hover:bg-yellow-100 rounded" title={item.featured ? 'Remove from featured' : 'Add to featured'}>
-                <span className={item.featured ? 'text-yellow-500' : 'text-gray-400'}>⭐</span>
+            <div className="flex flex-col gap-1 md:gap-2 flex-shrink-0">
+              <button onClick={() => toggleFeatured(item)} className="p-1.5 md:p-2 hover:bg-yellow-100 rounded" title={item.featured ? 'Remove from featured' : 'Add to featured'}>
+                <span className={`text-sm md:text-base ${item.featured ? 'text-yellow-500' : 'text-gray-400'}`}>⭐</span>
               </button>
-              <button onClick={() => handleEdit(item)} className="p-2 hover:bg-gray-100 rounded"><Edit size={16} /></button>
-              <button onClick={() => setDeleteConfirm({ isOpen: true, id: item.id })} className="p-2 hover:bg-red-100 text-red-600 rounded"><Trash2 size={16} /></button>
+              <button onClick={() => handleEdit(item)} className="p-1.5 md:p-2 hover:bg-gray-100 rounded"><Edit size={14} className="md:w-4 md:h-4" /></button>
+              <button onClick={() => setDeleteConfirm({ isOpen: true, id: item.id })} className="p-1.5 md:p-2 hover:bg-red-100 text-red-600 rounded"><Trash2 size={14} className="md:w-4 md:h-4" /></button>
             </div>
           </div>
         ))}
