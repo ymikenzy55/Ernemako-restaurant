@@ -148,7 +148,8 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
         >
           <button
             onClick={() => {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              onNavigate?.('HOME');
+              setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
             }}
             className="px-3 py-1.5 rounded-full text-sm font-medium text-white hover:bg-white/20 transition-colors"
           >
@@ -156,8 +157,11 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
           </button>
           <button
             onClick={() => {
-              const aboutSection = document.querySelector('[data-section="about"]');
-              aboutSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              onNavigate?.('HOME');
+              setTimeout(() => {
+                const aboutSection = document.querySelector('[data-section="about"]');
+                aboutSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
             }}
             className="px-3 py-1.5 rounded-full text-sm font-medium text-white hover:bg-white/20 transition-colors"
           >
@@ -165,8 +169,11 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
           </button>
           <button
             onClick={() => {
-              const menuSection = document.querySelector('[data-section="menu"]');
-              menuSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              onNavigate?.('HOME');
+              setTimeout(() => {
+                const menuSection = document.querySelector('[data-section="menu"]');
+                menuSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
             }}
             className="px-3 py-1.5 rounded-full text-sm font-medium text-white hover:bg-white/20 transition-colors"
           >
@@ -174,8 +181,11 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
           </button>
           <button
             onClick={() => {
-              const gallerySection = document.querySelector('[data-section="gallery"]');
-              gallerySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              onNavigate?.('HOME');
+              setTimeout(() => {
+                const gallerySection = document.querySelector('[data-section="gallery"]');
+                gallerySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
             }}
             className="px-3 py-1.5 rounded-full text-sm font-medium text-white hover:bg-white/20 transition-colors"
           >
@@ -183,8 +193,11 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
           </button>
           <button
             onClick={() => {
-              const contactSection = document.querySelector('[data-section="contact"]');
-              contactSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              onNavigate?.('HOME');
+              setTimeout(() => {
+                const contactSection = document.querySelector('[data-section="contact"]');
+                contactSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
             }}
             className="px-3 py-1.5 rounded-full text-sm font-medium text-white hover:bg-white/20 transition-colors"
           >
@@ -375,7 +388,8 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
                 <li>
                   <button
                     onClick={() => {
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      onNavigate?.('HOME');
+                      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
                       setIsMobileMenuOpen(false);
                     }}
                     className="w-full text-left px-4 py-3 rounded-xl text-white hover:bg-white/10 transition-colors flex items-center gap-3"
@@ -387,8 +401,11 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
                 <li>
                   <button
                     onClick={() => {
-                      const aboutSection = document.querySelector('[data-section="about"]');
-                      aboutSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      onNavigate?.('HOME');
+                      setTimeout(() => {
+                        const aboutSection = document.querySelector('[data-section="about"]');
+                        aboutSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
                       setIsMobileMenuOpen(false);
                     }}
                     className="w-full text-left px-4 py-3 rounded-xl text-white hover:bg-white/10 transition-colors flex items-center gap-3"
@@ -400,8 +417,11 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
                 <li>
                   <button
                     onClick={() => {
-                      const menuSection = document.querySelector('[data-section="menu"]');
-                      menuSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      onNavigate?.('HOME');
+                      setTimeout(() => {
+                        const menuSection = document.querySelector('[data-section="menu"]');
+                        menuSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
                       setIsMobileMenuOpen(false);
                     }}
                     className="w-full text-left px-4 py-3 rounded-xl text-white hover:bg-white/10 transition-colors flex items-center gap-3"
@@ -413,8 +433,11 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
                 <li>
                   <button
                     onClick={() => {
-                      const gallerySection = document.querySelector('[data-section="gallery"]');
-                      gallerySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      onNavigate?.('HOME');
+                      setTimeout(() => {
+                        const gallerySection = document.querySelector('[data-section="gallery"]');
+                        gallerySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
                       setIsMobileMenuOpen(false);
                     }}
                     className="w-full text-left px-4 py-3 rounded-xl text-white hover:bg-white/10 transition-colors flex items-center gap-3"
@@ -426,8 +449,11 @@ export const Navbar = ({ onNavigate }: NavbarProps) => {
                 <li>
                   <button
                     onClick={() => {
-                      const contactSection = document.querySelector('[data-section="contact"]');
-                      contactSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      onNavigate?.('HOME');
+                      setTimeout(() => {
+                        const contactSection = document.querySelector('[data-section="contact"]');
+                        contactSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
                       setIsMobileMenuOpen(false);
                     }}
                     className="w-full text-left px-4 py-3 rounded-xl text-white hover:bg-white/10 transition-colors flex items-center gap-3"
